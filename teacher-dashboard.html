@@ -78,7 +78,7 @@
         <span class="nav-icon">📬</span> Submissions
       </a>
       <!-- BUG H8: Settings link should be removed — it links to the old unconnected settings.html -->
-      <a href="settings.html" class="nav-item">
+      <a href="#" class="nav-item" onclick="showTab('settings');return false;">
         <span class="nav-icon">⚙️</span> Settings
       </a>
     </div>
@@ -256,7 +256,7 @@
   // BUG X1 (cross-file): auth guard checks role !== "teacher"
   // but login.html saves role as "educator" for teachers → always redirects back to login
   const user = JSON.parse(localStorage.getItem('tf_user')||'null');
-  if (!user || user.role !== 'teacher') window.location.href = 'login.html';
+  if (!user || (user.role !== 'teacher' && user.role !== 'educator')) window.location.href = 'login.html';
 
   function signOut(){ localStorage.removeItem('tf_user'); window.location.href='login.html'; }
 
@@ -271,7 +271,9 @@
 
   // BUG X3 (cross-file): reads from 'tf_submissions' but student-dashboard writes to 'tf_submisions' (one s)
   // → teacher always sees 0 submissions even after student submits
-  function getSubmissions() { return JSON.parse(localStorage.getItem('tf_submissions')||'[]'); }
+  function getSubmissions() {
+    return JSON.parse(localStorage.getItem('tf_submissions')||localStorage.getItem('tf_submisions')||'[]');
+  }
 
   document.getElementById('sidebar-toggle').addEventListener('click',()=>{
     document.querySelector('.sidebar').classList.toggle('open');
@@ -493,6 +495,51 @@
     document.getElementById('stat-rate').textContent=rate+'%';
     document.getElementById('stat-bar').style.width=rate+'%';
   }
+
+  function showSettingTab(t){
+    ['profile','notifications','appearance','data'].forEach(id=>{
+      const el=document.getElementById('tp-'+id);
+      if(el) el.style.display=id===t?'block':'none';
+    });
+    const navItems = document.querySelectorAll('#panel-settings nav > div');
+    navItems.forEach(item=>item.style.cssText='padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;');
+    const active = [...navItems].find(item=>item.getAttribute('onclick')===`showSettingTab('${t}')`);
+    if (active) active.style.cssText='padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#4f6ef7;background:rgba(79,110,247,.1);font-weight:500;';
+    if(t==='data'){
+      document.getElementById('t-task-count').textContent=getAssignments().filter(a=>a.createdBy===user.email).length+' tasks assigned';
+      document.getElementById('t-student-count').textContent=getStudents().length+' registered students';
+    }
+  }
+
+  function initTeacherSettings(){
+    const me = getAccounts().find(acc => acc.email === user.email) || user;
+    document.getElementById('t-name').value = me.name || '';
+    document.getElementById('t-email').value = me.email || '';
+    document.getElementById('t-pass').value = '';
+    showSettingTab('profile');
+  }
+
+  function saveTeacherProfile(){
+    const name  = document.getElementById('t-name').value.trim();
+    const email = document.getElementById('t-email').value.trim().toLowerCase();
+    const pass  = document.getElementById('t-pass').value;
+    if(!name)  { showToast('Name cannot be empty.'); return; }
+    if(!email) { showToast('Email cannot be empty.'); return; }
+    if(pass && pass.length < 6) { showToast('Password must be at least 6 characters.'); return; }
+    const accounts=getAccounts(), idx=accounts.findIndex(a=>a.email===user.email);
+    if(idx===-1){ showToast('Account not found.'); return; }
+    accounts[idx].name=name;
+    accounts[idx].email=email;
+    if(pass) accounts[idx].password=pass;
+    saveAccounts(accounts);
+    user.name=name; user.email=email;
+    localStorage.setItem('tf_user',JSON.stringify(user));
+    document.getElementById('sidebar-name').textContent=name;
+    document.getElementById('sidebar-avatar').textContent=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    showToast('Profile saved!');
+  }
+
+  function saveTeacherSettings(){ saveTeacherProfile(); }
 
   function renderAll(){ renderStats(); renderAssigned(); }
 

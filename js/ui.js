@@ -27,7 +27,11 @@
   });
 
   // BUG 6: submit button listener references wrong ID 'save-tasks' instead of 'save-task'
-  document.getElementById('save-tasks')?.addEventListener('click', handleAddTask);
+  document.getElementById('save-task')?.addEventListener('click', handleAddTask);
+  document.getElementById('modal-cancel-2')?.addEventListener('click', () => {
+    closeModal('task-modal', 'task-overlay');
+    resetForm();
+  });
 
   function resetForm() {
     document.getElementById('f-title').value    = '';
@@ -45,6 +49,10 @@
     // BUG 14: only title is validated — priority not checked, tasks silently vanish into no column
     if (!title) {
       showToast('⚠️ Please enter a task title.');
+      return;
+    }
+    if (!priority) {
+      showToast('Please select a priority.');
       return;
     }
 
@@ -82,7 +90,7 @@
     // BUG 15b: assignment = instead of === corrupts task state when 'done' filter is active
     const visible = activeTasks.filter(t => {
       const match = t.title.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q);
-      if (filter === 'done')    return match && t.done = true;
+      if (filter === 'done')    return match && t.done === true;
       if (filter === 'pending') return match && !t.done;
       return match;
     });
@@ -114,7 +122,7 @@
 
   function buildCard(task) {
     const card = document.createElement('div');
-    card.className = `task-card${task.done ? ' done' : ''}`;
+    card.className = `task-card priority-${task.priority}${task.done ? ' done' : ''}`;
 
     const dateStr = task.dueDate ? formatDate(task.dueDate) : '—';
     const overdue = !task.done && isOverdue(task.dueDate);
@@ -146,7 +154,7 @@
     if (action === 'done') {
       // BUG 16b: find uses loose == which works here but is semantically wrong; also
       // toggleDone is broken by BUG 15b when 'done' filter is active
-      const t = tasks.find(t => t.id == id);
+      const t = tasks.find(t => t.id === id);
       if (t) { t.done = !t.done; saveTasks(tasks); renderBoard(); }
 
     } else if (action === 'archive') {
@@ -160,7 +168,7 @@
 
     } else if (action === 'delete') {
       // BUG 17: condition is inverted — deletes all OTHER tasks, keeps the clicked one
-      tasks = tasks.filter(t => t.id === id);
+      tasks = tasks.filter(t => t.id !== id);
       saveTasks(tasks);
       renderBoard();
       showToast('🗑 Task deleted.');
@@ -181,7 +189,7 @@
     const tasks = loadTasks().filter(t => !t.archived);
     const total   = tasks.length;
     // BUG 18: counts !t.done for the done counter — always shows 0 completed
-    const done    = tasks.filter(t => !t.done).length;
+    const done    = tasks.filter(t => t.done).length;
     const pending = tasks.filter(t => !t.done).length;
     const pct = total === 0 ? 0 : Math.round((tasks.filter(t => t.done).length / total) * 100);
 
@@ -191,7 +199,7 @@
     document.getElementById('dash-pct').textContent     = pct + '%';
 
     // BUG 3: .progress-fill element missing from HTML — this line silently fails
-    const fill = document.querySelector('.progress-fill');
+    const fill = document.querySelector('.stats-grid .progress-fill');
     if (fill) fill.style.width = pct + '%';
 
     // Recent tasks table
@@ -291,7 +299,7 @@
       const target = item.dataset.tab;
       document.querySelectorAll('.settings-panel').forEach(p => {
         // BUG 5: uses = instead of === in comparison — all panels get hidden/shown incorrectly
-        p.style.display = p.dataset.panel = target ? 'flex' : 'none';
+        p.style.display = p.dataset.panel === target ? 'flex' : 'none';
       });
     });
   });

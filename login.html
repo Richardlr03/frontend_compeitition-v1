@@ -143,8 +143,7 @@
 
     // BUG X1: session is saved with role:"educator" for teachers instead of "teacher"
     // This causes teacher-dashboard.html auth guard (which checks role !== "teacher") to always redirect back to login
-    const sessionRole = acc.role === 'teacher' ? 'educator' : acc.role;
-    localStorage.setItem('tf_user', JSON.stringify({ role: sessionRole, name: acc.name, email: acc.email }));
+    localStorage.setItem('tf_user', JSON.stringify({ role: acc.role, name: acc.name, email: acc.email }));
     window.location.href = acc.role==='teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
   }
 
@@ -162,7 +161,7 @@
 
     // BUG X2: name is saved in lowercase — but assignments store student names in original case
     // e.g. teacher assigns to "Alex Johnson" but this saves "alex johnson" → student sees 0 tasks
-    accounts.push({ name: name.toLowerCase(), email, password: pass, role });
+    accounts.push({ name, email, password: pass, role });
     saveAccounts(accounts);
     showOk(`Account created! You can now sign in.`);
     setMode('signin');
@@ -173,7 +172,7 @@
   document.addEventListener('keydown', e => { if(e.key==='Enter') handleSubmit(); });
 
   const u = JSON.parse(localStorage.getItem('tf_user')||'null');
-  if (u) window.location.href = u.role==='teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+  if (u) window.location.href = (u.role==='teacher' || u.role==='educator') ? 'teacher-dashboard.html' : 'student-dashboard.html';
 </script>
 </body>
 </html>

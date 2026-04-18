@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- BUG H1: viewport meta tag missing -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TaskFlow – Tasks</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/pages.css" />
@@ -18,17 +18,17 @@
     <div class="sidebar-section">
       <div class="sidebar-section-label">Menu</div>
       <!-- BUG H2: hrefs missing .html extension -->
-      <a href="index" class="nav-item">
+      <a href="index.html" class="nav-item">
         <span class="nav-icon">🏠</span> Dashboard
       </a>
-      <a href="tasks" class="nav-item active">
+      <a href="tasks.html" class="nav-item active">
         <span class="nav-icon">✅</span> Tasks
         <span class="nav-badge" id="sidebar-task-count">0</span>
       </a>
-      <a href="archive" class="nav-item">
+      <a href="archive.html" class="nav-item">
         <span class="nav-icon">📦</span> Archive
       </a>
-      <a href="settings" class="nav-item">
+      <a href="settings.html" class="nav-item">
         <span class="nav-icon">⚙️</span> Settings
       </a>
     </div>
@@ -63,21 +63,21 @@
 
       <!-- BUG H4: column wrappers missing class="task-col" — kanban grid columns don't render correctly -->
       <div class="board">
-        <div>
+        <div class="task-col">
           <div class="col-header">
             <div class="col-header-left"><span class="col-dot high"></span> High Priority</div>
             <span class="col-count" data-col-count="high">0</span>
           </div>
           <div class="col-body" id="col-high"></div>
         </div>
-        <div>
+        <div class="task-col">
           <div class="col-header">
             <div class="col-header-left"><span class="col-dot medium"></span> Medium Priority</div>
             <span class="col-count" data-col-count="medium">0</span>
           </div>
           <div class="col-body" id="col-medium"></div>
         </div>
-        <div>
+        <div class="task-col">
           <div class="col-header">
             <div class="col-header-left"><span class="col-dot low"></span> Low Priority</div>
             <span class="col-count" data-col-count="low">0</span>
