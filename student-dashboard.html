@@ -473,58 +473,6 @@
 
   function renderStats(){ const a=getMyAssignments(), s=getSubmissions().filter(s=>s.studentName===STUDENT_NAME); document.getElementById('stat-total').textContent=a.length; document.getElementById('stat-submitted').textContent=s.length; document.getElementById('stat-outstanding').textContent=Math.max(0,a.length-s.length); document.getElementById('stat-own').textContent=getOwnTasks().length; document.getElementById('sidebar-task-count').textContent=Math.max(0,a.length-s.length); }
 
-  // BUG S1: showSettingsTab uses querySelectorAll('.settings-panel') which also
-  // hides panels in other tabs — switching settings tabs breaks other tab panels
-  function showSettingsTab(t){
-    document.querySelectorAll('#panel-settings .settings-panel').forEach(el=>el.style.display='none');
-    const target=document.getElementById('sp-'+t);
-    if(target) target.style.display='block';
-    // BUG S2: active class never applied to nav items — no visual highlight on selected tab
-    if(t==='data'){
-      const assignedCount=getMyAssignments().length;
-      const ownCount=getOwnTasks().length;
-      document.getElementById('s-total-count').textContent=(assignedCount+ownCount)+' tasks in storage';
-      document.getElementById('s-task-count').textContent=assignedCount+' tasks assigned to me';
-      document.getElementById('s-own-count').textContent=ownCount+' personal tasks';
-    }
-  }
-
-  function initSettings(){
-    // BUG S3: loads from wrong key 'tf_user' name field instead of tf_accounts
-    // so email shows correctly but resets to session value, not the saved account value
-    const me=getAccounts().find(acc=>acc.email===user.email) || JSON.parse(localStorage.getItem('tf_user')||'{}');
-    document.getElementById('s-name').value=me.name||'';
-    document.getElementById('s-email').value=me.email||'';
-    document.getElementById('s-role').value='Student';
-    document.getElementById('s-pass').value='';
-    showSettingsTab('profile');
-  }
-
-  // BUG S4: onclick on save button calls saveSettings() which doesn't exist — should be saveProfile()
-  function saveProfile(){
-    const email=document.getElementById('s-email').value.trim().toLowerCase();
-    const pass=document.getElementById('s-pass').value;
-    if(!email){ showToast('Email cannot be empty.'); return; }
-    // BUG S5: no password length validation — any password including 1 character is accepted
-    const accounts=getAccounts(), idx=accounts.findIndex(a=>a.email===user.email);
-    if(idx===-1){ showToast('Account not found.'); return; }
-    accounts[idx].email=email;
-    if(pass) accounts[idx].password=pass; // saves any password with no minimum length check
-    saveAccounts(accounts);
-    user.email=email;
-    localStorage.setItem('tf_user',JSON.stringify(user));
-    showToast('Profile saved!');
-  }
-
-  function clearMyTasks(){
-    if(!confirm('Delete all your personal tasks?')) return;
-    saveOwnTasks([]);
-    renderOwnTasks();
-    renderStats();
-    // BUG S6: data counts not refreshed after clearing — still shows old number
-    showToast('Personal tasks cleared.');
-  }
-
   calYear = new Date().getFullYear();
   calMonth = new Date().getMonth();
 
@@ -582,6 +530,8 @@
       document.getElementById('s-total-count').textContent=(assignedCount+ownCount)+' tasks in storage';
       document.getElementById('s-task-count').textContent=assignedCount+' tasks assigned to me';
       document.getElementById('s-own-count').textContent=ownCount+' personal tasks';
+    }
+  }
 
   function initSettings(){
     const me=getAccounts().find(acc=>acc.email===user.email) || JSON.parse(localStorage.getItem('tf_user')||'{}');
