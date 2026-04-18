@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow – Teacher Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+  <style>
+    .role-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(79,110,247,.15);color:#7a9af8;border:1px solid rgba(79,110,247,.25);border-radius:20px;font-size:.72rem;font-weight:600;padding:.2rem .7rem;letter-spacing:.04em;text-transform:uppercase}
+    .submission-row{cursor:pointer;transition:background .1s}
+    .submission-row:hover td{background:rgba(255,255,255,.02)}
+    .badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600}
+    .badge-submitted{background:rgba(34,197,94,.15);color:#4ade80}
+    .badge-pending{background:rgba(234,179,8,.15);color:#facc15}
+    .badge-overdue{background:rgba(239,68,68,.15);color:#f87171}
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100}
+    .overlay.open{display:block}
+    .modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1d27;border:1px solid #2a2d3a;border-radius:16px;padding:1.75rem;width:min(520px,92vw);z-index:101;max-height:90vh;overflow-y:auto}
+    .modal.open{display:block}
+    .modal-title{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:1.25rem}
+    .modal-footer{display:flex;gap:.75rem;justify-content:flex-end;margin-top:1.5rem}
+    .form-group{margin-bottom:1rem}
+    .form-label{display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;letter-spacing:.03em}
+    .form-control{width:100%;padding:.65rem .9rem;background:#13151e;border:1px solid #2a2d3a;border-radius:8px;color:#fff;font-size:.9rem;outline:none;transition:border-color .15s}
+    .form-control:focus{border-color:#4f6ef7}
+    .form-control::placeholder{color:#444}
+    textarea.form-control{resize:vertical;min-height:80px}
+    .btn{padding:.6rem 1.2rem;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+    .btn-primary{background:#4f6ef7;color:#fff}
+    .btn-primary:hover{background:#3a56e8}
+    .btn-ghost{background:transparent;border:1px solid #2a2d3a;color:#aaa}
+    .btn-ghost:hover{color:#fff;border-color:#555}
+    .btn-sm{padding:.35rem .75rem;font-size:.78rem}
+    .student-checklist{display:flex;flex-direction:column;gap:.4rem;max-height:180px;overflow-y:auto;background:#13151e;border:1px solid #2a2d3a;border-radius:8px;padding:.6rem}
+    .student-check-item{display:flex;align-items:center;gap:.6rem;padding:.3rem .4rem;border-radius:6px;cursor:pointer;transition:background .1s}
+    .student-check-item:hover{background:rgba(255,255,255,.04)}
+    .student-check-item input{accent-color:#4f6ef7;width:15px;height:15px;cursor:pointer}
+    .student-check-item label{font-size:.88rem;color:#ddd;cursor:pointer;flex:1}
+    .check-all-row{display:flex;align-items:center;gap:.6rem;padding:.3rem .4rem;border-bottom:1px solid #2a2d3a;margin-bottom:.3rem}
+    .check-all-row input{accent-color:#4f6ef7;width:15px;height:15px;cursor:pointer}
+    .check-all-row label{font-size:.82rem;color:#888;cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+    .detail-panel{background:#13151e;border:1px solid #2a2d3a;border-radius:12px;padding:1.25rem;margin-top:1rem;display:none}
+    .detail-panel.open{display:block}
+    .detail-title{font-size:.9rem;font-weight:700;color:#fff;margin-bottom:.75rem}
+    .student-submission{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid #1e2130}
+    .student-submission:last-child{border-bottom:none}
+    .student-name{font-size:.88rem;color:#ddd}
+    .student-submitted-at{font-size:.75rem;color:#555}
+    .tab-bar{display:flex;gap:0;border-bottom:1px solid #2a2d3a;margin-bottom:1.5rem}
+    .tab{padding:.6rem 1.1rem;font-size:.85rem;font-weight:600;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+    .tab.active{color:#4f6ef7;border-bottom-color:#4f6ef7}
+    .page-body{padding:1.5rem !important}
+    .topbar-meta{display:flex;align-items:center;gap:.75rem}
+    .signout-btn{background:transparent;border:1px solid #2a2d3a;color:#666;padding:.35rem .8rem;border-radius:6px;font-size:.78rem;cursor:pointer;transition:all .15s}
+    .signout-btn:hover{color:#fff;border-color:#555}
+  </style>
+</head>
+<body>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚡</div>
+      <span class="logo-text">TaskFlow</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Teacher Menu</div>
+      <a href="teacher-dashboard.html" class="nav-item active">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+      <a href="#" class="nav-item" onclick="showTab('assigned');return false;">
+        <span class="nav-icon">📋</span> Assigned Tasks
+        <span class="nav-badge" id="sidebar-task-count">0</span>
+      </a>
+      <a href="#" class="nav-item" onclick="showTab('submissions');return false;">
+        <span class="nav-icon">📬</span> Submissions
+      </a>
+      <!-- BUG H8: Settings link should be removed — it links to the old unconnected settings.html -->
+      <a href="settings.html" class="nav-item">
+        <span class="nav-icon">⚙️</span> Settings
+      </a>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="avatar" id="sidebar-avatar">MT</div>
+        <div class="user-info">
+          <div class="user-name" id="sidebar-name">Ms. Taylor</div>
+          <div class="user-role">Teacher</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+      <h1 class="topbar-title">Teacher Dashboard</h1>
+      <div class="topbar-actions topbar-meta">
+        <span class="role-badge">👩‍🏫 Teacher</span>
+        <button class="btn btn-primary" onclick="openAssignModal()">+ Assign Task</button>
+        <button class="signout-btn" onclick="signOut()">Sign out</button>
+      </div>
+    </header>
+
+    <main class="page-body">
+      <div class="stats-grid" style="margin-bottom:1.75rem;">
+        <div class="stat-card">
+          <div class="stat-label">Total Assigned</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-sub">tasks to students</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Submitted</div>
+          <div class="stat-value" id="stat-submitted">0</div>
+          <div class="stat-sub">completed by students</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Pending</div>
+          <div class="stat-value" id="stat-pending">0</div>
+          <div class="stat-sub">awaiting submission</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Submission Rate</div>
+          <div class="stat-value" id="stat-rate">0%</div>
+          <div class="progress-wrap"><div class="progress-fill" id="stat-bar"></div></div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab active" id="tab-assigned"    onclick="showTab('assigned')">Assigned Tasks</div>
+        <div class="tab"        id="tab-submissions" onclick="showTab('submissions')">Submissions</div>
+        <div class="tab"        id="tab-settings"    onclick="showTab('settings')">⚙️ Settings</div>
+      </div>
+
+      <div id="panel-assigned">
+        <div style="margin-bottom:1rem;">
+          <input type="text" id="teacher-search" class="search-box" placeholder="Search tasks…" oninput="renderAssigned()" style="max-width:280px;" />
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="table" style="margin:0;">
+            <thead>
+              <tr><th>Task</th><th>Assigned To</th><th>Priority</th><th>Due Date</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody id="assigned-table-body">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">No tasks assigned yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="detail-panel" id="detail-panel">
+          <div class="detail-title" id="detail-title">Submissions for: —</div>
+          <div id="detail-body"></div>
+        </div>
+      </div>
+
+      <div id="panel-submissions" style="display:none;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table class="table" style="margin:0;">
+            <thead>
+              <tr><th>Student</th><th>Task</th><th>Priority</th><th>Submitted At</th><th>Note</th></tr>
+            </thead>
+            <tbody id="submissions-table-body">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">No submissions yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Settings panel — BUG S1: nav tabs exist but onclick calls showSettingTab (missing 's') -->
+      <div id="panel-settings" style="display:none;">
+        <div style="display:grid;grid-template-columns:180px 1fr;gap:1.5rem;">
+          <nav style="display:flex;flex-direction:column;gap:.3rem;">
+            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#4f6ef7;background:rgba(79,110,247,.1);font-weight:500;" onclick="showSettingTab('profile')">👤 Profile</div>
+            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;" onclick="showSettingTab('notifications')">🔔 Notifications</div>
+            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;" onclick="showSettingTab('appearance')">🎨 Appearance</div>
+            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;" onclick="showSettingTab('data')">🗄️ Data</div>
+          </nav>
+          <div>
+            <div id="tp-profile" style="background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;margin-bottom:1rem;">
+              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Profile Information</div>
+              <div style="padding:1rem 1.1rem;display:flex;flex-direction:column;gap:1rem;">
+                <div><label style="display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;">Display Name</label><input type="text" class="form-control" id="t-name" /></div>
+                <div><label style="display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;">Email</label><input type="email" class="form-control" id="t-email" /></div>
+                <div><label style="display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;">New Password</label><input type="password" class="form-control" id="t-pass" placeholder="Leave blank to keep current" /></div>
+                <!-- BUG S4: calls saveTeacherSettings() which doesn't exist — should be saveTeacherProfile() -->
+                <div><button class="btn btn-primary" onclick="saveTeacherSettings()">Save Changes</button></div>
+              </div>
+            </div>
+            <div id="tp-notifications" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;margin-bottom:1rem;">
+              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Notifications</div>
+              <div style="padding:1rem 1.1rem;font-size:.85rem;color:#888;">Notification settings coming soon.</div>
+            </div>
+            <div id="tp-appearance" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;margin-bottom:1rem;">
+              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Appearance</div>
+              <div style="padding:1rem 1.1rem;font-size:.85rem;color:#888;">Appearance settings coming soon.</div>
+            </div>
+            <div id="tp-data" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;">
+              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Data Management</div>
+              <div style="padding:1rem 1.1rem;">
+                <div style="font-size:.85rem;color:#888;margin-bottom:.5rem;" id="t-task-count">—</div>
+                <div style="font-size:.85rem;color:#888;" id="t-student-count">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Assign modal -->
+<div class="overlay" id="assign-overlay" onclick="closeAssignModal()"></div>
+<div class="modal" id="assign-modal">
+  <div class="modal-title">Assign New Task</div>
+  <div class="form-group">
+    <label class="form-label">Task Title <span style="color:#f87171">*</span></label>
+    <input type="text" id="at-title" class="form-control" placeholder="e.g. Chapter 5 Reading" />
+  </div>
+  <div class="form-group">
+    <label class="form-label">Description</label>
+    <textarea id="at-desc" class="form-control" placeholder="Instructions or details…"></textarea>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Assign To <span style="color:#f87171">*</span></label>
+    <div class="student-checklist" id="student-checklist">
+      <div class="check-all-row">
+        <input type="checkbox" id="check-all" onchange="toggleAllStudents(this.checked)" />
+        <label for="check-all">All Students</label>
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Priority <span style="color:#f87171">*</span></label>
+    <select id="at-priority" class="form-control">
+      <option value="">— Select priority —</option>
+      <option value="high">🔴 High</option>
+      <option value="medium">🟡 Medium</option>
+      <option value="low">🟢 Low</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Due Date</label>
+    <input type="date" id="at-date" class="form-control" />
+  </div>
+  <div id="assign-error" style="color:#f87171;font-size:.82rem;display:none;margin-bottom:.5rem;"></div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeAssignModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveAssignment()">Assign Task</button>
+  </div>
+</div>
+
+<div class="toast-container"></div>
+
+<script>
+  // BUG X1 (cross-file): auth guard checks role !== "teacher"
+  // but login.html saves role as "educator" for teachers → always redirects back to login
+  const user = JSON.parse(localStorage.getItem('tf_user')||'null');
+  if (!user || user.role !== 'teacher') window.location.href = 'login.html';
+
+  function signOut(){ localStorage.removeItem('tf_user'); window.location.href='login.html'; }
+
+  document.getElementById('sidebar-name').textContent = user.name;
+  document.getElementById('sidebar-avatar').textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  function getAccounts()    { return JSON.parse(localStorage.getItem('tf_accounts')||'[]'); }
+  function saveAccounts(a)  { localStorage.setItem('tf_accounts',JSON.stringify(a)); }
+  function getStudents()    { return getAccounts().filter(a=>a.role==='student'); }
+  function getAssignments() { return JSON.parse(localStorage.getItem('tf_assignments')||'[]'); }
+  function saveAssignments(a){ localStorage.setItem('tf_assignments',JSON.stringify(a)); }
+
+  // BUG X3 (cross-file): reads from 'tf_submissions' but student-dashboard writes to 'tf_submisions' (one s)
+  // → teacher always sees 0 submissions even after student submits
+  function getSubmissions() { return JSON.parse(localStorage.getItem('tf_submissions')||'[]'); }
+
+  document.getElementById('sidebar-toggle').addEventListener('click',()=>{
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  });
+  document.getElementById('sidebar-overlay').addEventListener('click',()=>{
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+  });
+
+  const TABS = ['assigned','submissions','settings'];
+  function showTab(tab) {
+    TABS.forEach(t=>{
+      document.getElementById('panel-'+t).style.display = t===tab?'':'none';
+      document.getElementById('tab-'+t).className='tab'+(t===tab?' active':'');
+    });
+    if(tab==='submissions') renderSubmissions();
+    if(tab==='settings')    initTeacherSettings();
+  }
+
+  // BUG S1: function named showSettingTab (missing 's') — matches onclick in HTML
+  // but means if someone tries to call showSettingsTab() it won't work
+  function showSettingTab(t){
+    ['profile','notifications','appearance','data'].forEach(id=>{
+      const el=document.getElementById('tp-'+id);
+      if(el) el.style.display=id===t?'block':'none';
+    });
+    if(t==='data'){
+      document.getElementById('t-task-count').textContent=getAssignments().filter(a=>a.createdBy===user.email).length+' tasks assigned';
+      document.getElementById('t-student-count').textContent=getStudents().length+' registered students';
+    }
+  }
+
+  function initTeacherSettings(){
+    // BUG S3: reads directly from user session instead of tf_accounts
+    // so if account details were changed, the old session value shows
+    document.getElementById('t-name').value = user.name || '';
+    document.getElementById('t-email').value = user.email || '';
+    document.getElementById('t-pass').value = '';
+    showSettingTab('profile');
+  }
+
+  // BUG S4: save button calls saveTeacherSettings() — this is the real function
+  // but HTML calls a different name so the button does nothing
+  function saveTeacherProfile(){
+    const name  = document.getElementById('t-name').value.trim();
+    const email = document.getElementById('t-email').value.trim().toLowerCase();
+    const pass  = document.getElementById('t-pass').value;
+    if(!name)  { showToast('Name cannot be empty.'); return; }
+    if(!email) { showToast('Email cannot be empty.'); return; }
+    // BUG S5: no minimum password length check
+    const accounts=getAccounts(), idx=accounts.findIndex(a=>a.email===user.email);
+    if(idx===-1){ showToast('Account not found.'); return; }
+    accounts[idx].name=name;
+    accounts[idx].email=email;
+    if(pass) accounts[idx].password=pass;
+    saveAccounts(accounts);
+    user.name=name; user.email=email;
+    localStorage.setItem('tf_user',JSON.stringify(user));
+    document.getElementById('sidebar-name').textContent=name;
+    document.getElementById('sidebar-avatar').textContent=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    showToast('Profile saved!');
+  }
+
+  // BUG L2 (subtle): buildStudentChecklist reads from tf_accounts immediately
+  // but on first page load the checklist is built before accounts are available if
+  // the modal opens before any interaction — student list appears empty first click
+  function buildStudentChecklist() {
+    const students = getStudents();
+    const list = document.getElementById('student-checklist');
+    list.querySelectorAll('.student-check-item').forEach(el=>el.remove());
+    students.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'student-check-item';
+      div.innerHTML = `<input type="checkbox" id="sc-${s.email}" value="${s.name}" />
+        <label for="sc-${s.email}">${s.name} <span style="color:#555;font-size:.75rem;">(${s.email})</span></label>`;
+      list.appendChild(div);
+    });
+    document.getElementById('check-all').checked = false;
+  }
+
+  function toggleAllStudents(checked) {
+    document.querySelectorAll('#student-checklist .student-check-item input').forEach(cb=>cb.checked=checked);
+  }
+
+  function getSelectedStudents() {
+    return [...document.querySelectorAll('#student-checklist .student-check-item input:checked')].map(cb=>cb.value);
+  }
+
+  function openAssignModal() {
+    buildStudentChecklist();
+    document.getElementById('assign-overlay').classList.add('open');
+    document.getElementById('assign-modal').classList.add('open');
+  }
+  function closeAssignModal() {
+    document.getElementById('assign-overlay').classList.remove('open');
+    document.getElementById('assign-modal').classList.remove('open');
+    ['at-title','at-desc','at-priority','at-date'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('assign-error').style.display='none';
+    document.getElementById('check-all').checked=false;
+    document.querySelectorAll('#student-checklist .student-check-item input').forEach(cb=>cb.checked=false);
+  }
+
+  function saveAssignment() {
+    const title    = document.getElementById('at-title').value.trim();
+    const priority = document.getElementById('at-priority').value;
+    const selected = getSelectedStudents();
+    const errEl    = document.getElementById('assign-error');
+    if (!title)           { errEl.textContent='Please enter a task title.'; errEl.style.display='block'; return; }
+    if (!priority)        { errEl.textContent='Please select a priority.';  errEl.style.display='block'; return; }
+    if (!selected.length) { errEl.textContent='Please select at least one student.'; errEl.style.display='block'; return; }
+    errEl.style.display='none';
+    const assignments = getAssignments();
+    selected.forEach(studentName => {
+      assignments.push({
+        id: Date.now()+Math.random(),
+        title,
+        desc: document.getElementById('at-desc').value.trim(),
+        student: studentName,
+        priority,
+        dueDate: document.getElementById('at-date').value,
+        createdAt: new Date().toISOString(),
+        createdBy: user.email,
+      });
+    });
+    saveAssignments(assignments);
+    closeAssignModal();
+    renderAll();
+    showToast(`Task assigned to ${selected.length} student${selected.length>1?'s':''}!`);
+  }
+
+  function deleteAssignment(id) {
+    if (!confirm('Delete this assignment?')) return;
+    saveAssignments(getAssignments().filter(a=>a.id!=id));
+    document.getElementById('detail-panel').classList.remove('open');
+    renderAll();
+  }
+
+  let activeDetailId = null;
+  function renderAssigned() {
+    const query = (document.getElementById('teacher-search').value||'').toLowerCase();
+    const assignments = getAssignments().filter(a=>
+      a.createdBy===user.email &&
+      (!query||a.title.toLowerCase().includes(query)||a.student.toLowerCase().includes(query))
+    );
+    const submissions = getSubmissions();
+    const tbody = document.getElementById('assigned-table-body');
+    if (!assignments.length) {
+      tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">No tasks assigned yet.</td></tr>`;
+      document.getElementById('detail-panel').classList.remove('open');
+      return;
+    }
+    tbody.innerHTML = assignments.map(a=>{
+      const subs = submissions.filter(s=>s.taskId==a.id);
+      const isSubmitted = subs.length>0;
+      const today = new Date().toISOString().split('T')[0];
+
+      // BUG L1 (subtle off-by-one): uses strict < so a task due TODAY is NOT overdue here,
+      // but student-dashboard uses <= so today's tasks show overdue on student side.
+      // The two dashboards disagree on whether today is overdue. Fix: use <= consistently.
+      const overdue = a.dueDate && a.dueDate < today && !isSubmitted;
+
+      const bc = isSubmitted?'badge-submitted':overdue?'badge-overdue':'badge-pending';
+      const bt = isSubmitted?'Submitted':overdue?'Overdue':'Pending';
+      const due = a.dueDate ? new Date(a.dueDate+'T00:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short'}) : '—';
+      const dot = {high:'🔴',medium:'🟡',low:'🟢'}[a.priority]||'';
+      return `<tr class="submission-row" onclick="toggleDetail('${a.id}')">
+        <td style="font-weight:600;color:var(--text)">${a.title}</td>
+        <td style="color:var(--text-muted)">${a.student}</td>
+        <td>${dot} ${a.priority}</td>
+        <td>${due}</td>
+        <td><span class="badge ${bc}">${bt}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteAssignment('${a.id}')">🗑</button></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('sidebar-task-count').textContent = assignments.length;
+  }
+
+  function toggleDetail(id) {
+    const submissions = getSubmissions().filter(s=>s.taskId==id);
+    const assignment  = getAssignments().find(a=>a.id==id);
+    const panel = document.getElementById('detail-panel');
+    if (activeDetailId===id) { panel.classList.remove('open'); activeDetailId=null; return; }
+    activeDetailId=id;
+    document.getElementById('detail-title').textContent=`Submissions for: ${assignment?.title||''}`;
+    document.getElementById('detail-body').innerHTML = !submissions.length
+      ? `<p style="color:var(--text-muted);font-size:.85rem;padding:.5rem 0;">No submissions yet.</p>`
+      : submissions.map(s=>`<div class="student-submission">
+          <div><div class="student-name">${s.studentName}</div>${s.note?`<div class="student-submitted-at" style="color:#888;margin-top:.2rem;">"${s.note}"</div>`:''}</div>
+          <div style="text-align:right;">
+            <span class="badge badge-submitted">Submitted</span>
+            <div class="student-submitted-at" style="margin-top:.25rem;">${new Date(s.submittedAt).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+          </div>
+        </div>`).join('');
+    panel.classList.add('open');
+  }
+
+  function renderSubmissions() {
+    const submissions = getSubmissions();
+    const assignments = getAssignments();
+    const tbody = document.getElementById('submissions-table-body');
+    if (!submissions.length) { tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">No submissions yet.</td></tr>`; return; }
+    const sorted=[...submissions].sort((a,b)=>new Date(b.submittedAt)-new Date(a.submittedAt));
+    tbody.innerHTML=sorted.map(s=>{
+      const task=assignments.find(a=>a.id==s.taskId);
+      const dot={high:'🔴',medium:'🟡',low:'🟢'}[task?.priority]||'';
+      const time=new Date(s.submittedAt).toLocaleString('en-AU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+      return `<tr><td style="font-weight:600;">${s.studentName}</td><td>${task?.title||'—'}</td><td>${dot} ${task?.priority||'—'}</td><td>${time}</td><td style="color:var(--text-muted);font-size:.85rem;">${s.note||'—'}</td></tr>`;
+    }).join('');
+  }
+
+  function renderStats() {
+    const a=getAssignments().filter(a=>a.createdBy===user.email), s=getSubmissions();
+    const total=a.length, submitted=s.length, pending=Math.max(0,total-submitted);
+    const rate=total?Math.round((submitted/total)*100):0;
+    document.getElementById('stat-total').textContent=total;
+    document.getElementById('stat-submitted').textContent=submitted;
+    document.getElementById('stat-pending').textContent=pending;
+    document.getElementById('stat-rate').textContent=rate+'%';
+    document.getElementById('stat-bar').style.width=rate+'%';
+  }
+
+  function renderAll(){ renderStats(); renderAssigned(); }
+
+  function showToast(msg){
+    const t=document.createElement('div'); t.className='toast show'; t.textContent=msg;
+    document.querySelector('.toast-container').appendChild(t);
+    setTimeout(()=>t.remove(),3000);
+  }
+
+  renderAll();
+</script>
+</body>
+</html>

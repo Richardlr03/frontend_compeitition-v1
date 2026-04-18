@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TaskFlow – Sign In</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1117;font-family:'Segoe UI',system-ui,sans-serif;padding:1rem}
+    .wrap{width:100%;max-width:440px}
+    .logo{text-align:center;margin-bottom:2rem}
+    .logo-icon{font-size:2.5rem;display:block;margin-bottom:.5rem}
+    .logo-text{font-size:1.75rem;font-weight:700;color:#fff;letter-spacing:-.03em}
+    .logo-sub{font-size:.875rem;color:#666;margin-top:.25rem}
+    .card{background:#1a1d27;border:1px solid #2a2d3a;border-radius:16px;padding:2rem}
+    .mode-toggle{display:flex;background:#13151e;border-radius:10px;padding:3px;margin-bottom:1.5rem}
+    .mode-btn{flex:1;text-align:center;padding:.5rem;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;color:#666;transition:all .18s;user-select:none}
+    .mode-btn.active{background:#1a1d27;color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+    .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.75rem}
+    .role-btn{border:2px solid #2a2d3a;background:#13151e;border-radius:12px;padding:1.25rem 1rem;cursor:pointer;text-align:center;transition:all .18s;color:#aaa}
+    .role-btn:hover{border-color:#4f6ef7;color:#fff}
+    .role-btn.active{border-color:#4f6ef7;background:rgba(79,110,247,.12);color:#fff}
+    .role-icon{font-size:2rem;display:block;margin-bottom:.5rem}
+    .role-label{font-size:.9rem;font-weight:600}
+    .role-desc{font-size:.72rem;margin-top:.2rem;opacity:.7}
+    .fg{margin-bottom:1.1rem}
+    .fl{display:block;font-size:.82rem;color:#888;margin-bottom:.4rem;text-transform:uppercase;font-weight:600;letter-spacing:.02em}
+    .fc{width:100%;padding:.7rem 1rem;background:#13151e;border:1px solid #2a2d3a;border-radius:8px;color:#fff;font-size:.95rem;outline:none;transition:border-color .15s}
+    .fc:focus{border-color:#4f6ef7}
+    .fc::placeholder{color:#444}
+    .btn-main{width:100%;padding:.85rem;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-top:.5rem;transition:background .15s,transform .1s}
+    .btn-main.blue{background:#4f6ef7}
+    .btn-main.blue:hover{background:#3a56e8}
+    .btn-main.green{background:#22c55e}
+    .btn-main.green:hover{background:#16a34a}
+    .btn-main:active{transform:scale(.98)}
+    .msg{border-radius:8px;padding:.6rem .9rem;font-size:.85rem;margin-bottom:1rem;display:none}
+    .msg.show{display:block}
+    .msg.err{background:rgba(220,60,60,.12);border:1px solid rgba(220,60,60,.3);color:#f87171}
+    .msg.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#4ade80}
+    .demo-hint{background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1.5rem;font-size:.8rem;color:#7a9af8;line-height:1.6}
+    .demo-hint strong{color:#a0b8ff}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <span class="logo-icon">⚡</span>
+    <div class="logo-text">TaskFlow</div>
+    <div class="logo-sub">Classroom Edition</div>
+  </div>
+  <div class="card">
+    <div class="mode-toggle">
+      <div class="mode-btn active" id="btn-signin" onclick="setMode('signin')">Sign In</div>
+      <div class="mode-btn"        id="btn-signup" onclick="setMode('signup')">Sign Up</div>
+    </div>
+    <div class="role-grid">
+      <button class="role-btn active" data-role="teacher" onclick="selectRole('teacher')">
+        <span class="role-icon">👩‍🏫</span>
+        <div class="role-label">Teacher</div>
+        <div class="role-desc">Assign &amp; track tasks</div>
+      </button>
+      <button class="role-btn" data-role="student" onclick="selectRole('student')">
+        <span class="role-icon">🎓</span>
+        <div class="role-label">Student</div>
+        <div class="role-desc">View &amp; submit work</div>
+      </button>
+    </div>
+    <div class="msg err" id="msg-err"></div>
+    <div class="msg ok"  id="msg-ok"></div>
+    <div class="demo-hint" id="demo-hint">
+      <strong>Demo accounts:</strong><br>
+      Teacher → teacher@school.com / password<br>
+      Student → student@school.com / password
+    </div>
+    <div class="fg" id="field-name" style="display:none">
+      <label class="fl">Full Name</label>
+      <input class="fc" type="text" id="f-name" placeholder="Your full name" />
+    </div>
+    <div class="fg">
+      <label class="fl">Email</label>
+      <input class="fc" type="email" id="f-email" placeholder="you@school.com" />
+    </div>
+    <div class="fg">
+      <label class="fl">Password</label>
+      <input class="fc" type="password" id="f-password" placeholder="••••••••" />
+    </div>
+    <div class="fg" id="field-confirm" style="display:none">
+      <label class="fl">Confirm Password</label>
+      <input class="fc" type="password" id="f-confirm" placeholder="••••••••" />
+    </div>
+    <button class="btn-main blue" id="submit-btn" onclick="handleSubmit()">Sign In →</button>
+  </div>
+</div>
+<script>
+  let role = 'teacher', mode = 'signin';
+
+  function getAccounts() {
+    return JSON.parse(localStorage.getItem('tf_accounts') || 'null') || [
+      { name:'Ms. Taylor',   email:'teacher@school.com', password:'password', role:'teacher' },
+      { name:'Alex Johnson', email:'student@school.com', password:'password', role:'student' },
+      { name:'Priya Sharma', email:'priya@school.com',   password:'password', role:'student' },
+      { name:'Marcus Lee',   email:'marcus@school.com',  password:'password', role:'student' },
+      { name:"Sara O'Brien", email:'sara@school.com',    password:'password', role:'student' },
+    ];
+  }
+  function saveAccounts(a) { localStorage.setItem('tf_accounts', JSON.stringify(a)); }
+  if (!localStorage.getItem('tf_accounts')) saveAccounts(getAccounts());
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('btn-signin').classList.toggle('active', m==='signin');
+    document.getElementById('btn-signup').classList.toggle('active', m==='signup');
+    document.getElementById('field-name').style.display    = m==='signup' ? '' : 'none';
+    document.getElementById('field-confirm').style.display = m==='signup' ? '' : 'none';
+    document.getElementById('demo-hint').style.display     = m==='signin' ? '' : 'none';
+    const btn = document.getElementById('submit-btn');
+    btn.textContent = m==='signup' ? 'Create Account →' : 'Sign In →';
+    btn.className   = m==='signup' ? 'btn-main green' : 'btn-main blue';
+    clearMsg();
+  }
+
+  function selectRole(r) {
+    role = r;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.toggle('active', b.dataset.role===r));
+    clearMsg();
+  }
+
+  function clearMsg() {
+    document.getElementById('msg-err').classList.remove('show');
+    document.getElementById('msg-ok').classList.remove('show');
+  }
+  function showErr(t)  { const e=document.getElementById('msg-err'); e.textContent=t; e.classList.add('show'); document.getElementById('msg-ok').classList.remove('show'); }
+  function showOk(t)   { const e=document.getElementById('msg-ok');  e.textContent=t; e.classList.add('show'); document.getElementById('msg-err').classList.remove('show'); }
+
+  function handleSubmit() { mode==='signin' ? doSignIn() : doSignUp(); }
+
+  function doSignIn() {
+    const email = document.getElementById('f-email').value.trim().toLowerCase();
+    const pass  = document.getElementById('f-password').value;
+    const acc   = getAccounts().find(a => a.email.toLowerCase()===email && a.password===pass && a.role===role);
+    if (!acc) { showErr('Invalid email, password, or role. Please try again.'); return; }
+
+    // BUG X1: session is saved with role:"educator" for teachers instead of "teacher"
+    // This causes teacher-dashboard.html auth guard (which checks role !== "teacher") to always redirect back to login
+    const sessionRole = acc.role === 'teacher' ? 'educator' : acc.role;
+    localStorage.setItem('tf_user', JSON.stringify({ role: sessionRole, name: acc.name, email: acc.email }));
+    window.location.href = acc.role==='teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+  }
+
+  function doSignUp() {
+    const name    = document.getElementById('f-name').value.trim();
+    const email   = document.getElementById('f-email').value.trim().toLowerCase();
+    const pass    = document.getElementById('f-password').value;
+    const confirm = document.getElementById('f-confirm').value;
+    if (!name)               { showErr('Please enter your full name.'); return; }
+    if (!email)              { showErr('Please enter your email.'); return; }
+    if (pass.length < 6)     { showErr('Password must be at least 6 characters.'); return; }
+    if (pass !== confirm)    { showErr('Passwords do not match.'); return; }
+    const accounts = getAccounts();
+    if (accounts.find(a => a.email.toLowerCase()===email)) { showErr('An account with this email already exists.'); return; }
+
+    // BUG X2: name is saved in lowercase — but assignments store student names in original case
+    // e.g. teacher assigns to "Alex Johnson" but this saves "alex johnson" → student sees 0 tasks
+    accounts.push({ name: name.toLowerCase(), email, password: pass, role });
+    saveAccounts(accounts);
+    showOk(`Account created! You can now sign in.`);
+    setMode('signin');
+    document.getElementById('f-email').value = email;
+    ['f-name','f-password','f-confirm'].forEach(id => document.getElementById(id).value='');
+  }
+
+  document.addEventListener('keydown', e => { if(e.key==='Enter') handleSubmit(); });
+
+  const u = JSON.parse(localStorage.getItem('tf_user')||'null');
+  if (u) window.location.href = u.role==='teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+</script>
+</body>
+</html>
