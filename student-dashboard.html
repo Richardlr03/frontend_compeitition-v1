@@ -208,23 +208,22 @@
               <div class="settings-card">
                 <div class="settings-card-header"><div class="settings-card-title">Profile Information</div></div>
                 <div class="settings-card-body">
-                  <div class="settings-row">
-                    <div><div class="settings-row-label">Display Name</div><div class="settings-row-sub" id="s-name-display" style="color:#ddd;font-size:.9rem;margin-top:.3rem;"></div></div>
-                    <span style="font-size:.72rem;color:#555;background:#1e2130;border:1px solid #2a2d3a;border-radius:6px;padding:.2rem .6rem;">Cannot be changed</span>
-                  </div>
+                  <div class="form-group" style="margin:0;"><label class="form-label">Display Name</label><input type="text" class="form-control" id="s-name" readonly /></div>
                   <div class="form-group" style="margin:0;"><label class="form-label">Email</label><input type="email" class="form-control" id="s-email" /></div>
+                  <div class="form-group" style="margin:0;"><label class="form-label">Role</label><input type="text" class="form-control" id="s-role" readonly /></div>
                   <div class="form-group" style="margin:0;"><label class="form-label">New Password</label><input type="password" class="form-control" id="s-pass" placeholder="Leave blank to keep current" /></div>
-                  <div style="font-size:.78rem;color:#666;margin-top:-.25rem;">⚠️ Display name is locked — tasks are assigned to it.</div>
+                  <div style="font-size:.78rem;color:#666;margin-top:-.25rem;">Display name is locked so existing task assignments continue to match correctly.</div>
                   <div><button class="btn btn-primary-green" onclick="saveSettings()">Save Changes</button></div>
                 </div>
               </div>
             </div>
             <div class="settings-panel" id="sp-notifications" style="display:none;">
               <div class="settings-card">
-                <div class="settings-card-header"><div class="settings-card-title">Notifications</div></div>
+                <div class="settings-card-header"><div class="settings-card-title">Notification Preferences</div></div>
                 <div class="settings-card-body">
                   <div class="settings-row"><div><div class="settings-row-label">Task Due Reminders</div><div class="settings-row-sub">Get notified when a task is due soon</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
                   <div class="settings-row"><div><div class="settings-row-label">Overdue Alerts</div><div class="settings-row-sub">Alert when tasks pass their due date</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Weekly Summary</div><div class="settings-row-sub">Receive a weekly digest of your progress</div></div><label class="toggle"><input type="checkbox" id="s-weekly-summary" /><span class="toggle-slider"></span></label></div>
                 </div>
               </div>
             </div>
@@ -233,6 +232,7 @@
                 <div class="settings-card-header"><div class="settings-card-title">Appearance</div></div>
                 <div class="settings-card-body">
                   <div class="settings-row"><div><div class="settings-row-label">Compact Mode</div><div class="settings-row-sub">Reduce padding for a denser layout</div></div><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Show Sidebar Labels</div><div class="settings-row-sub">Always show text labels next to icons</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
                 </div>
               </div>
             </div>
@@ -240,6 +240,7 @@
               <div class="settings-card">
                 <div class="settings-card-header"><div class="settings-card-title">Data Management</div></div>
                 <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Total tasks stored</div><div class="settings-row-sub" id="s-total-count">�</div></div></div>
                   <div class="settings-row"><div><div class="settings-row-label">Assigned tasks</div><div class="settings-row-sub" id="s-task-count">—</div></div></div>
                   <div class="settings-row"><div><div class="settings-row-label">Personal tasks</div><div class="settings-row-sub" id="s-own-count">—</div></div></div>
                 </div>
@@ -475,22 +476,26 @@
   // BUG S1: showSettingsTab uses querySelectorAll('.settings-panel') which also
   // hides panels in other tabs — switching settings tabs breaks other tab panels
   function showSettingsTab(t){
-    document.querySelectorAll('.settings-panel').forEach(el=>el.style.display='none');
+    document.querySelectorAll('#panel-settings .settings-panel').forEach(el=>el.style.display='none');
     const target=document.getElementById('sp-'+t);
     if(target) target.style.display='block';
     // BUG S2: active class never applied to nav items — no visual highlight on selected tab
     if(t==='data'){
-      document.getElementById('s-task-count').textContent=getMyAssignments().length+' tasks assigned to me';
-      document.getElementById('s-own-count').textContent=getOwnTasks().length+' personal tasks';
+      const assignedCount=getMyAssignments().length;
+      const ownCount=getOwnTasks().length;
+      document.getElementById('s-total-count').textContent=(assignedCount+ownCount)+' tasks in storage';
+      document.getElementById('s-task-count').textContent=assignedCount+' tasks assigned to me';
+      document.getElementById('s-own-count').textContent=ownCount+' personal tasks';
     }
   }
 
   function initSettings(){
     // BUG S3: loads from wrong key 'tf_user' name field instead of tf_accounts
     // so email shows correctly but resets to session value, not the saved account value
-    const me=JSON.parse(localStorage.getItem('tf_user')||'{}');
-    document.getElementById('s-name-display').textContent=me.name||'';
+    const me=getAccounts().find(acc=>acc.email===user.email) || JSON.parse(localStorage.getItem('tf_user')||'{}');
+    document.getElementById('s-name').value=me.name||'';
     document.getElementById('s-email').value=me.email||'';
+    document.getElementById('s-role').value='Student';
     document.getElementById('s-pass').value='';
     showSettingsTab('profile');
   }
@@ -572,15 +577,17 @@
     if(target) target.style.display='block';
     document.querySelectorAll('#panel-settings .settings-nav-item').forEach(el=>el.classList.toggle('active', el.getAttribute('onclick')===`showSettingsTab('${t}')`));
     if(t==='data'){
-      document.getElementById('s-task-count').textContent=getMyAssignments().length+' tasks assigned to me';
-      document.getElementById('s-own-count').textContent=getOwnTasks().length+' personal tasks';
-    }
-  }
+      const assignedCount=getMyAssignments().length;
+      const ownCount=getOwnTasks().length;
+      document.getElementById('s-total-count').textContent=(assignedCount+ownCount)+' tasks in storage';
+      document.getElementById('s-task-count').textContent=assignedCount+' tasks assigned to me';
+      document.getElementById('s-own-count').textContent=ownCount+' personal tasks';
 
   function initSettings(){
     const me=getAccounts().find(acc=>acc.email===user.email) || JSON.parse(localStorage.getItem('tf_user')||'{}');
-    document.getElementById('s-name-display').textContent=me.name||'';
+    document.getElementById('s-name').value=me.name||'';
     document.getElementById('s-email').value=me.email||'';
+    document.getElementById('s-role').value='Student';
     document.getElementById('s-pass').value='';
     showSettingsTab('profile');
   }

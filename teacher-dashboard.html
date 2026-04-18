@@ -169,37 +169,59 @@
 
       <!-- Settings panel — BUG S1: nav tabs exist but onclick calls showSettingTab (missing 's') -->
       <div id="panel-settings" style="display:none;">
-        <div style="display:grid;grid-template-columns:180px 1fr;gap:1.5rem;">
-          <nav style="display:flex;flex-direction:column;gap:.3rem;">
-            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#4f6ef7;background:rgba(79,110,247,.1);font-weight:500;" onclick="showSettingTab('profile')">👤 Profile</div>
-            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;" onclick="showSettingTab('notifications')">🔔 Notifications</div>
-            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;" onclick="showSettingTab('appearance')">🎨 Appearance</div>
-            <div style="padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;" onclick="showSettingTab('data')">🗄️ Data</div>
+        <div class="settings-layout">
+          <nav class="settings-nav">
+            <div class="settings-nav-item active" onclick="showSettingTab('profile')">Profile</div>
+            <div class="settings-nav-item" onclick="showSettingTab('notifications')">Notifications</div>
+            <div class="settings-nav-item" onclick="showSettingTab('appearance')">Appearance</div>
+            <div class="settings-nav-item" onclick="showSettingTab('data')">Data</div>
           </nav>
           <div>
-            <div id="tp-profile" style="background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;margin-bottom:1rem;">
-              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Profile Information</div>
-              <div style="padding:1rem 1.1rem;display:flex;flex-direction:column;gap:1rem;">
-                <div><label style="display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;">Display Name</label><input type="text" class="form-control" id="t-name" /></div>
-                <div><label style="display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;">Email</label><input type="email" class="form-control" id="t-email" /></div>
-                <div><label style="display:block;font-size:.8rem;color:#888;margin-bottom:.35rem;text-transform:uppercase;font-weight:600;">New Password</label><input type="password" class="form-control" id="t-pass" placeholder="Leave blank to keep current" /></div>
-                <!-- BUG S4: calls saveTeacherSettings() which doesn't exist — should be saveTeacherProfile() -->
-                <div><button class="btn btn-primary" onclick="saveTeacherSettings()">Save Changes</button></div>
+            <div class="settings-panel" id="tp-profile">
+              <div class="settings-card">
+                <div class="settings-card-header"><div class="settings-card-title">Profile Information</div></div>
+                <div class="settings-card-body">
+                  <div class="form-group" style="margin:0;"><label class="form-label">Display Name</label><input type="text" class="form-control" id="t-name" /></div>
+                  <div class="form-group" style="margin:0;"><label class="form-label">Email</label><input type="email" class="form-control" id="t-email" /></div>
+                  <div class="form-group" style="margin:0;"><label class="form-label">Role</label><input type="text" class="form-control" id="t-role" readonly /></div>
+                  <div class="form-group" style="margin:0;"><label class="form-label">New Password</label><input type="password" class="form-control" id="t-pass" placeholder="Leave blank to keep current" /></div>
+                  <div><button class="btn btn-primary" onclick="saveTeacherSettings()">Save Changes</button></div>
+                </div>
               </div>
             </div>
-            <div id="tp-notifications" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;margin-bottom:1rem;">
-              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Notifications</div>
-              <div style="padding:1rem 1.1rem;font-size:.85rem;color:#888;">Notification settings coming soon.</div>
+            <div class="settings-panel" id="tp-notifications" style="display:none;">
+              <div class="settings-card">
+                <div class="settings-card-header"><div class="settings-card-title">Notification Preferences</div></div>
+                <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Task Due Reminders</div><div class="settings-row-sub">Get notified when a task is due soon</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Overdue Alerts</div><div class="settings-row-sub">Alert when tasks pass their due date</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Weekly Summary</div><div class="settings-row-sub">Receive a weekly digest of class progress</div></div><label class="toggle"><input type="checkbox" id="t-weekly-summary" /><span class="toggle-slider"></span></label></div>
+                </div>
+              </div>
             </div>
-            <div id="tp-appearance" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;margin-bottom:1rem;">
-              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Appearance</div>
-              <div style="padding:1rem 1.1rem;font-size:.85rem;color:#888;">Appearance settings coming soon.</div>
+            <div class="settings-panel" id="tp-appearance" style="display:none;">
+              <div class="settings-card">
+                <div class="settings-card-header"><div class="settings-card-title">Appearance</div></div>
+                <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Compact Mode</div><div class="settings-row-sub">Reduce padding for a denser layout</div></div><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Show Sidebar Labels</div><div class="settings-row-sub">Always show text labels next to icons</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
+                </div>
+              </div>
             </div>
-            <div id="tp-data" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;">
-              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Data Management</div>
-              <div style="padding:1rem 1.1rem;">
-                <div style="font-size:.85rem;color:#888;margin-bottom:.5rem;" id="t-task-count">—</div>
-                <div style="font-size:.85rem;color:#888;" id="t-student-count">—</div>
+            <div class="settings-panel" id="tp-data" style="display:none;">
+              <div class="settings-card">
+                <div class="settings-card-header"><div class="settings-card-title">Data Management</div></div>
+                <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Total tasks stored</div><div class="settings-row-sub" id="t-total-count">—</div></div></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Assigned tasks</div><div class="settings-row-sub" id="t-task-count">—</div></div></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Registered students</div><div class="settings-row-sub" id="t-student-count">—</div></div></div>
+                </div>
+              </div>
+              <div class="settings-card danger-zone">
+                <div class="settings-card-header"><div class="settings-card-title" style="color:#f87171;">Danger Zone</div></div>
+                <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Delete all assigned tasks</div><div class="settings-row-sub">Permanently removes every assignment you created.</div></div><button class="btn btn-danger" onclick="clearTeacherTasks()">Delete All</button></div>
+                </div>
               </div>
             </div>
           </div>
@@ -501,12 +523,11 @@
       const el=document.getElementById('tp-'+id);
       if(el) el.style.display=id===t?'block':'none';
     });
-    const navItems = document.querySelectorAll('#panel-settings nav > div');
-    navItems.forEach(item=>item.style.cssText='padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#888;font-weight:500;');
-    const active = [...navItems].find(item=>item.getAttribute('onclick')===`showSettingTab('${t}')`);
-    if (active) active.style.cssText='padding:.6rem .9rem;border-radius:8px;cursor:pointer;font-size:.85rem;color:#4f6ef7;background:rgba(79,110,247,.1);font-weight:500;';
+    document.querySelectorAll('#panel-settings .settings-nav-item').forEach(el=>el.classList.toggle('active', el.getAttribute('onclick')===`showSettingTab('${t}')`));
     if(t==='data'){
-      document.getElementById('t-task-count').textContent=getAssignments().filter(a=>a.createdBy===user.email).length+' tasks assigned';
+      const assignedCount=getAssignments().filter(a=>a.createdBy===user.email).length;
+      document.getElementById('t-total-count').textContent=assignedCount+' tasks in storage';
+      document.getElementById('t-task-count').textContent=assignedCount+' tasks assigned';
       document.getElementById('t-student-count').textContent=getStudents().length+' registered students';
     }
   }
@@ -515,6 +536,7 @@
     const me = getAccounts().find(acc => acc.email === user.email) || user;
     document.getElementById('t-name').value = me.name || '';
     document.getElementById('t-email').value = me.email || '';
+    document.getElementById('t-role').value = 'Teacher';
     document.getElementById('t-pass').value = '';
     showSettingTab('profile');
   }
@@ -540,6 +562,15 @@
   }
 
   function saveTeacherSettings(){ saveTeacherProfile(); }
+
+  function clearTeacherTasks(){
+    if(!confirm('Delete all tasks you assigned?')) return;
+    saveAssignments(getAssignments().filter(a=>a.createdBy!==user.email));
+    document.getElementById('detail-panel').classList.remove('open');
+    renderAll();
+    showSettingTab('data');
+    showToast('Assigned tasks cleared.');
+  }
 
   function renderAll(){ renderStats(); renderAssigned(); }
 
