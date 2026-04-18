@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- BUG H1: viewport meta tag missing — page won't scale on mobile -->
   <title>TaskFlow - Dashboard</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/pages.css" />
@@ -17,7 +16,6 @@
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-label">Menu</div>
-      <!-- BUG H2: all nav hrefs missing .html extension — navigation is broken -->
       <a href="index" class="nav-item active">
         <span class="nav-icon">🏠</span> Dashboard
       </a>
@@ -68,7 +66,6 @@
           <div class="stat-value" id="dash-pending">0</div>
           <div class="stat-sub">still in progress</div>
         </div>
-        <!-- BUG H3: progress-fill inner div missing — progress bar never fills -->
         <div class="stat-card">
           <div class="stat-label">Overall Progress</div>
           <div class="stat-value" id="dash-pct">0%</div>

@@ -141,7 +141,6 @@
     const acc   = getAccounts().find(a => a.email.toLowerCase()===email && a.password===pass && a.role===role);
     if (!acc) { showErr('Invalid email, password, or role. Please try again.'); return; }
 
-    // BUG X1: session is saved with role:"educator" for teachers instead of "teacher"
     // This causes teacher-dashboard.html auth guard (which checks role !== "teacher") to always redirect back to login
     const sessionRole = acc.role === 'teacher' ? 'educator' : acc.role;
     localStorage.setItem('tf_user', JSON.stringify({ role: sessionRole, name: acc.name, email: acc.email }));
@@ -160,8 +159,6 @@
     const accounts = getAccounts();
     if (accounts.find(a => a.email.toLowerCase()===email)) { showErr('An account with this email already exists.'); return; }
 
-    // BUG X2: name is saved in lowercase — but assignments store student names in original case
-    // e.g. teacher assigns to "Alex Johnson" but this saves "alex johnson" → student sees 0 tasks
     accounts.push({ name: name.toLowerCase(), email, password: pass, role });
     saveAccounts(accounts);
     showOk(`Account created! You can now sign in.`);
