@@ -212,7 +212,6 @@
               <div class="settings-card">
                 <div class="settings-card-header"><div class="settings-card-title">Data Management</div></div>
                 <div class="settings-card-body">
-                  <div class="settings-row"><div><div class="settings-row-label">Total tasks stored</div><div class="settings-row-sub" id="t-total-count">—</div></div></div>
                   <div class="settings-row"><div><div class="settings-row-label">Assigned tasks</div><div class="settings-row-sub" id="t-task-count">—</div></div></div>
                   <div class="settings-row"><div><div class="settings-row-label">Registered students</div><div class="settings-row-sub" id="t-student-count">—</div></div></div>
                 </div>
@@ -526,7 +525,6 @@
     document.querySelectorAll('#panel-settings .settings-nav-item').forEach(el=>el.classList.toggle('active', el.getAttribute('onclick')===`showSettingTab('${t}')`));
     if(t==='data'){
       const assignedCount=getAssignments().filter(a=>a.createdBy===user.email).length;
-      document.getElementById('t-total-count').textContent=assignedCount+' tasks in storage';
       document.getElementById('t-task-count').textContent=assignedCount+' tasks assigned';
       document.getElementById('t-student-count').textContent=getStudents().length+' registered students';
     }
