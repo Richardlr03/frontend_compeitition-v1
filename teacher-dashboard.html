@@ -74,10 +74,10 @@
         <span class="nav-icon">📋</span> Assigned Tasks
         <span class="nav-badge" id="sidebar-task-count">0</span>
       </a>
-      <a href="#" class="nav-item" onclick="showTabs('submissions');return false;">
+      <a href="#" class="nav-item" onclick="showTab('submissions');return false;">
         <span class="nav-icon">📬</span> Submissions
       </a>
-      <a href="settings.html" class="nav-item">
+      <a href="#" class="nav-item" onclick="showTab('settings');return false;">
         <span class="nav-icon">⚙️</span> Settings
       </a>
     </div>
@@ -98,7 +98,7 @@
       <h1 class="topbar-title">Teacher Dashboard</h1>
       <div class="topbar-actions topbar-meta">
         <span class="role-badge">👩‍🏫 Teacher</span>
-        <button class="btn btn-primary" onclick="openTaskModal()">+ Assign Task</button>
+        <button class="btn btn-primary" onclick="openAssignModal()">+ Assign Task</button>
         <button class="signout-btn" onclick="signOut()">Sign out</button>
       </div>
     </header>
@@ -129,8 +129,8 @@
 
       <div class="tab-bar">
         <div class="tab active" id="tab-assigned"    onclick="showTab('assigned')">Assigned Tasks</div>
-        <div class="tab"        id="tab-submissions" onclick="showTabs('submissions')">Submissions</div>
-        <div class="tab"        id="tab-setting"     onclick="showTab('settings')">⚙️ Settings</div>
+        <div class="tab"        id="tab-submissions" onclick="showTab('submissions')">Submissions</div>
+        <div class="tab"        id="tab-settings"    onclick="showTab('settings')">⚙️ Settings</div>
       </div>
 
       <div id="panel-assigned">
@@ -171,8 +171,6 @@
         <div class="settings-layout">
           <nav class="settings-nav">
             <div class="settings-nav-item active" onclick="showSettingTab('profile')">Profile</div>
-            <div class="settings-nav-item" onclick="showSettingTab('notifications')">Notifications</div>
-            <div class="settings-nav-item" onclick="showSettingTab('appearance')">Appearance</div>
             <div class="settings-nav-item" onclick="showSettingTab('data')">Data</div>
           </nav>
           <div>
@@ -185,30 +183,12 @@
                 <div><button class="btn btn-primary" onclick="saveTeacherSettings()">Save Changes</button></div>
               </div>
             </div>
-            <div class="settings-panel" id="tp-notifications" style="display:none;">
-              <div class="settings-card">
-                <div class="settings-card-header"><div class="settings-card-title">Notification Preferences</div></div>
-                <div class="settings-card-body">
-                  <div class="settings-row"><div><div class="settings-row-label">Task Due Reminders</div><div class="settings-row-sub">Get notified when a task is due soon</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Overdue Alerts</div><div class="settings-row-sub">Alert when tasks pass their due date</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Weekly Summary</div><div class="settings-row-sub">Receive a weekly digest of class progress</div></div><label class="toggle"><input type="checkbox" id="t-weekly-summary" /><span class="toggle-slider"></span></label></div>
-                </div>
-              </div>
-            </div>
-            <div class="settings-panel" id="tp-appearance" style="display:none;">
-              <div class="settings-card">
-                <div class="settings-card-header"><div class="settings-card-title">Appearance</div></div>
-                <div class="settings-card-body">
-                  <div class="settings-row"><div><div class="settings-row-label">Compact Mode</div><div class="settings-row-sub">Reduce padding for a denser layout</div></div><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Show Sidebar Labels</div><div class="settings-row-sub">Always show text labels next to icons</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                </div>
-              </div>
-            </div>
             <div id="tp-data" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;">
               <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Data Management</div>
               <div style="padding:1rem 1.1rem;">
                 <div style="font-size:.85rem;color:#888;margin-bottom:.5rem;" id="t-task-count">—</div>
                 <div style="font-size:.85rem;color:#888;margin-bottom:1rem;" id="t-student-count">—</div>
+                <button class="btn btn-ghost" onclick="clearTeacherTasks()">Delete My Assigned Tasks</button>
               </div>
             </div>
           </div>
@@ -219,7 +199,7 @@
 </div>
 
 <!-- Assign modal -->
-<div class="overlay" id="assign-overlay" onclick="closeModal()"></div>
+<div class="overlay" id="assign-overlay" onclick="closeAssignModal()"></div>
 <div class="modal" id="assign-modal">
   <div class="modal-title">Assign New Task</div>
   <div class="form-group">
@@ -254,7 +234,7 @@
   </div>
   <div id="assign-error" style="color:#f87171;font-size:.82rem;display:none;margin-bottom:.5rem;"></div>
   <div class="modal-footer">
-    <button class="btn btn-ghost">Cancel</button>
+    <button class="btn btn-ghost" onclick="closeAssignModal()">Cancel</button>
     <button class="btn btn-primary" onclick="saveAssignment()">Assign Task</button>
   </div>
 </div>
@@ -281,6 +261,7 @@
   
   
   function getSubmissions() { return JSON.parse(localStorage.getItem('tf_submissions')||'[]'); }
+  function saveSubmissions(a){ localStorage.setItem('tf_submissions',JSON.stringify(a)); }
 
   document.getElementById('sidebar-toggle').addEventListener('click',()=>{
     document.querySelector('.sidebar').classList.toggle('open');
@@ -302,7 +283,7 @@
   }
 
   function showSettingTab(t){
-    ['profile','notifications','appearance','data'].forEach(id=>{
+    ['profile','data'].forEach(id=>{
       const el=document.getElementById('tp-'+id);
       if(el) el.style.display=id===t?'block':'none';
     });
@@ -410,6 +391,7 @@
   function deleteAssignment(id) {
     if (!confirm('Delete this assignment?')) return;
     saveAssignments(getAssignments().filter(a=>a.id!=id));
+    saveSubmissions(getSubmissions().filter(s=>s.taskId!=id));
     document.getElementById('detail-panel').classList.remove('open');
     renderAll();
   }
@@ -474,8 +456,9 @@
   }
 
   function renderSubmissions() {
-    const submissions = getSubmissions();
-    const assignments = getAssignments();
+    const assignments = getAssignments().filter(a=>a.createdBy===user.email);
+    const assignmentIds = new Set(assignments.map(a=>String(a.id)));
+    const submissions = getSubmissions().filter(s=>assignmentIds.has(String(s.taskId)));
     const tbody = document.getElementById('submissions-table-body');
     if (!submissions.length) { tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">No submissions yet.</td></tr>`; return; }
     const sorted=[...submissions].sort((a,b)=>new Date(b.submittedAt)-new Date(a.submittedAt));
@@ -488,7 +471,9 @@
   }
 
   function renderStats() {
-    const a=getAssignments().filter(a=>a.createdBy===user.email), s=getSubmissions();
+    const a=getAssignments().filter(a=>a.createdBy===user.email);
+    const ids = new Set(a.map(item=>String(item.id)));
+    const s=getSubmissions().filter(sub=>ids.has(String(sub.taskId)));
     const total=a.length, submitted=s.length, pending=Math.max(0,total-submitted);
     const rate=total?Math.round((submitted/total)*100):0;
     document.getElementById('stat-total').textContent=total;
@@ -499,7 +484,7 @@
   }
 
   function showSettingTab(t){
-    ['profile','notifications','appearance','data'].forEach(id=>{
+    ['profile','data'].forEach(id=>{
       const el=document.getElementById('tp-'+id);
       if(el) el.style.display=id===t?'block':'none';
     });
@@ -515,7 +500,6 @@
     const me = getAccounts().find(acc => acc.email === user.email) || user;
     document.getElementById('t-name').value = me.name || '';
     document.getElementById('t-email').value = me.email || '';
-    document.getElementById('t-role').value = 'Teacher';
     document.getElementById('t-pass').value = '';
     showSettingTab('profile');
   }
@@ -529,10 +513,13 @@
     if(pass && pass.length < 6) { showToast('Password must be at least 6 characters.'); return; }
     const accounts=getAccounts(), idx=accounts.findIndex(a=>a.email===user.email);
     if(idx===-1){ showToast('Account not found.'); return; }
+    if(accounts.some((a,i)=>i!==idx && a.email.toLowerCase()===email)){ showToast('Email is already in use.'); return; }
+    const oldEmail = user.email;
     accounts[idx].name=name;
     accounts[idx].email=email;
     if(pass) accounts[idx].password=pass;
     saveAccounts(accounts);
+    saveAssignments(getAssignments().map(a=>a.createdBy===oldEmail?{...a,createdBy:email}:a));
     user.name=name; user.email=email;
     localStorage.setItem('tf_user',JSON.stringify(user));
     document.getElementById('sidebar-name').textContent=name;
@@ -544,7 +531,9 @@
 
   function clearTeacherTasks(){
     if(!confirm('Delete all tasks you assigned?')) return;
+    const ownedIds = new Set(getAssignments().filter(a=>a.createdBy===user.email).map(a=>String(a.id)));
     saveAssignments(getAssignments().filter(a=>a.createdBy!==user.email));
+    saveSubmissions(getSubmissions().filter(s=>!ownedIds.has(String(s.taskId))));
     document.getElementById('detail-panel').classList.remove('open');
     renderAll();
     showSettingTab('data');

@@ -182,7 +182,7 @@
             <input type="text" id="sc-title" class="form-control" placeholder="Event title" style="flex:2;min-width:140px;" />
             <input type="datetime-local" id="sc-time" class="form-control" style="flex:2;min-width:180px;" />
             <input type="text" id="sc-notes" class="form-control" placeholder="Notes (optional)" style="flex:2;min-width:140px;" />
-            <button class="btn" style="background:#a855f7;color:#fff;flex-shrink:0;" onclick="saveScheduleEven()">+ Add</button>
+            <button class="btn" style="background:#a855f7;color:#fff;flex-shrink:0;" onclick="saveScheduleEvent()">+ Add</button>
           </div>
           <div id="sc-error" style="color:#f87171;font-size:.8rem;margin-top:.4rem;display:none;"></div>
         </div>
@@ -199,8 +199,6 @@
         <div class="settings-layout">
           <nav class="settings-nav">
             <div class="settings-nav-item active" onclick="showSettingsTab('profile')">👤 Profile</div>
-            <div class="settings-nav-item" onclick="showSettingsTab('notifications')">🔔 Notifications</div>
-            <div class="settings-nav-item" onclick="showSettingsTab('appearance')">🎨 Appearance</div>
             <div class="settings-nav-item" onclick="showSettingsTab('data')">🗄️ Data</div>
           </nav>
           <div>
@@ -208,32 +206,10 @@
               <div class="settings-card">
                 <div class="settings-card-header"><div class="settings-card-title">Profile Information</div></div>
                 <div class="settings-card-body">
-                       but here it's an editable input just like the teacher's profile.
-                       If student changes their name, all assigned tasks disappear because
-                       tasks are stored using the original name as the key. -->
-                  <div class="form-group" style="margin:0;"><label class="form-label">Display Name</label><input type="text" class="form-control" id="s-name" /></div>
+                  <div class="form-group" style="margin:0;"><label class="form-label">Display Name</label><input type="text" class="form-control" id="s-name" readonly /></div>
                   <div class="form-group" style="margin:0;"><label class="form-label">Email</label><input type="email" class="form-control" id="s-email" /></div>
-                       so students can set a mistyped password with no warning -->
                   <div class="form-group" style="margin:0;"><label class="form-label">New Password</label><input type="password" class="form-control" id="s-pass" placeholder="Leave blank to keep current" /></div>
                   <div><button class="btn btn-primary-green" onclick="saveSettings()">Save Changes</button></div>
-                </div>
-              </div>
-            </div>
-            <div class="settings-panel" id="sp-notifications" style="display:none;">
-              <div class="settings-card">
-                <div class="settings-card-header"><div class="settings-card-title">Notification Preferences</div></div>
-                <div class="settings-card-body">
-                  <div class="settings-row"><div><div class="settings-row-label">Task Due Reminders</div><div class="settings-row-sub">Get notified when a task is due soon</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Overdue Alerts</div><div class="settings-row-sub">Alert when tasks pass their due date</div></div><label class="toggle"><input type="checkbox" checked /></label></div>
-                </div>
-              </div>
-            </div>
-            <div class="settings-panel" id="sp-appearance" style="display:none;">
-              <div class="settings-card">
-                <div class="settings-card-header"><div class="settings-card-title">Appearance</div></div>
-                <div class="settings-card-body">
-                  <div class="settings-row"><div><div class="settings-row-label">Compact Mode</div><div class="settings-row-sub">Reduce padding for a denser layout</div></div><label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Show Sidebar Labels</div><div class="settings-row-sub">Always show text labels next to icons</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
                 </div>
               </div>
             </div>
@@ -362,7 +338,7 @@
       const sub=submissions.find(s=>s.taskId==a.id&&s.studentName===STUDENT_NAME);
       const today=new Date().toISOString().split('T')[0];
 
-      const overdue=a.dueDate&&a.dueDate<=today&&!sub;
+      const overdue=a.dueDate&&a.dueDate<today&&!sub;
 
       const bc=sub?'badge-submitted':overdue?'badge-overdue':'badge-pending';
       const bt=sub?'Submitted':overdue?'Overdue':'Pending';
@@ -394,6 +370,11 @@
   function confirmSubmit(){
     if(!pendingSubmitId) return;
     const subs=getSubmissions();
+    if(subs.some(s=>s.taskId==pendingSubmitId && s.studentName===STUDENT_NAME)){
+      closeSubmitModal();
+      renderAll();
+      return;
+    }
     subs.push({ taskId:pendingSubmitId, studentName:STUDENT_NAME, note:document.getElementById('submit-note').value.trim(), submittedAt:new Date().toISOString() });
     saveSubmissions(subs);
     closeSubmitModal();
@@ -403,6 +384,10 @@
 
   let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
   function changeMonth(d){
+    calMonth += d;
+    if (calMonth < 0) { calMonth = 11; calYear -= 1; }
+    if (calMonth > 11) { calMonth = 0; calYear += 1; }
+    renderCalendar();
   }
   function goToday(){ calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCalendar(); }
 
@@ -414,7 +399,7 @@
     const byDate={};
     function addEv(ds,ev){ if(!ds)return; if(!byDate[ds])byDate[ds]=[]; byDate[ds].push(ev); }
 
-    const assignments=getAssignments().filter(a=>a.assignedTo===STUDENT_NAME);
+    const assignments=getMyAssignments();
     const submissions=getSubmissions();
     assignments.forEach(a=>{ if(!a.dueDate)return; const sub=submissions.find(s=>s.taskId==a.id&&s.studentName===STUDENT_NAME); addEv(a.dueDate,{ label:a.title, cls:sub?'type-teacher-submitted':'type-teacher-'+(a.priority||'medium'), type:'📋 Teacher task', due:a.dueDate, priority:a.priority, status:sub?'Submitted ✓':'Pending', note:a.desc }); });
     schedule.forEach(e=>{ const ds=e.time?e.time.split('T')[0]:null; if(!ds)return; const timeStr=e.time?new Date(e.time).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}):''; addEv(ds,{ label:(timeStr?timeStr+' ':'')+e.title, cls:'type-personal', type:'📅 Personal event', due:ds, status:'', note:e.notes }); });
@@ -425,7 +410,8 @@
     function ds(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 
     function cell(dayNum,dateS,other){
-      let cls='cal-cell'+(other?' other-month':''); // missing: +(isToday?' today':'')
+      const isToday = dateS === ds(today);
+      let cls='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
       const evs=(byDate[dateS]||[]);
       const evHtml=evs.slice(0,3).map(ev=>`<div class="cal-event ${ev.cls}" onclick="showPopup(event,'${encodeURIComponent(JSON.stringify(ev))}')" title="${ev.label}">${ev.label}</div>`).join('')+(evs.length>3?`<div style="font-size:.65rem;color:#555;padding:.1rem .2rem;">+${evs.length-3} more</div>`:'');
       return `<div class="${cls}"><div class="cal-day-num">${dayNum}</div>${evHtml}</div>`;
@@ -441,7 +427,7 @@
   function closePopup(){ document.getElementById('cal-popup').classList.remove('open'); }
   document.addEventListener('click',()=>closePopup());
 
-  function saveScheduleEven(){
+  function saveScheduleEvent(){
     const title=document.getElementById('sc-title').value.trim(), time=document.getElementById('sc-time').value, err=document.getElementById('sc-error');
     if(!title||!time){ err.textContent='Title and date/time are required.'; err.style.display='block'; return; }
     err.style.display='none';
@@ -462,11 +448,21 @@
   function toggleOwnTask(id){ saveOwnTasks(getOwnTasks().map(t=>t.id==id?{...t,done:!t.done}:t)); renderOwnTasks(); }
   function deleteOwnTask(id){ saveOwnTasks(getOwnTasks().filter(t=>t.id!=id)); renderOwnTasks(); renderStats(); }
 
-  function renderStats(){ const a=getMyAssignments(), s=getSubmissions().filter(s=>s.studentName===STUDENT_NAME); document.getElementById('stat-total').textContent=a.length; document.getElementById('stat-submitted').textContent=s.length; document.getElementById('stat-outstanding').textContent=Math.max(0,a.length-s.length); document.getElementById('stat-own').textContent=getOwnTasks().length; document.getElementById('sidebar-task-count').textContent=Math.max(0,a.length-s.length); }
+  function renderStats(){
+    const a=getMyAssignments();
+    const ids=new Set(a.map(item=>String(item.id)));
+    const s=getSubmissions().filter(sub=>sub.studentName===STUDENT_NAME && ids.has(String(sub.taskId)));
+    document.getElementById('stat-total').textContent=a.length;
+    document.getElementById('stat-submitted').textContent=s.length;
+    document.getElementById('stat-outstanding').textContent=Math.max(0,a.length-s.length);
+    document.getElementById('stat-own').textContent=getOwnTasks().length;
+    document.getElementById('sidebar-task-count').textContent=Math.max(0,a.length-s.length);
+  }
 
   // hides panels in other tabs — switching settings tabs breaks other tab panels
   function showSettingsTab(t){
     document.querySelectorAll('#panel-settings .settings-panel').forEach(el=>el.style.display='none');
+    document.querySelectorAll('#panel-settings .settings-nav-item').forEach(el=>el.classList.toggle('active', el.getAttribute('onclick')===`showSettingsTab('${t}')`));
     const target=document.getElementById('sp-'+t);
     if(target) target.style.display='block';
     if(t==='data'){
@@ -481,29 +477,25 @@
     const me=JSON.parse(localStorage.getItem('tf_user')||'{}');
     document.getElementById('s-name').value=me.name||'';
     document.getElementById('s-email').value=me.email||'';
-    document.getElementById('s-role').value='Student';
     document.getElementById('s-pass').value='';
-    document.getElementById('s-task-count').textContent=getAssignments().length+' tasks assigned';
+    document.getElementById('s-task-count').textContent=getMyAssignments().length+' tasks assigned to me';
     document.getElementById('s-own-count').textContent=getOwnTasks().length+' personal tasks';
     showSettingsTab('profile');
   }
 
   function saveProfile(){
-    const name  = document.getElementById('s-name').value.trim();
     const email = document.getElementById('s-email').value.trim().toLowerCase();
     const pass  = document.getElementById('s-pass').value;
     if(!email){ showToast('Email cannot be empty.'); return; }
+    if(pass && pass.length < 6){ showToast('Password must be at least 6 characters.'); return; }
     const accounts=getAccounts(), idx=accounts.findIndex(a=>a.email===user.email);
     if(idx===-1){ showToast('Account not found.'); return; }
-    // all tasks assigned to "Alex Johnson" become invisible since filter uses a.student === STUDENT_NAME
-    accounts[idx].name=name;
+    if(accounts.some((a,i)=>i!==idx && a.email.toLowerCase()===email)){ showToast('Email is already in use.'); return; }
     accounts[idx].email=email;
     if(pass) accounts[idx].password=pass;
     saveAccounts(accounts);
-    user.name=name; user.email=email;
+    user.email=email;
     localStorage.setItem('tf_user',JSON.stringify(user));
-    document.getElementById('sidebar-name').textContent=name;
-    document.getElementById('sidebar-avatar').textContent=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     showToast('Profile saved!');
   }
 
