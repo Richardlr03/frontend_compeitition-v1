@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/pages.css" />
   <style>
+    html{visibility:hidden}
     .role-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25);border-radius:20px;font-size:.72rem;font-weight:600;padding:.2rem .7rem;letter-spacing:.04em;text-transform:uppercase}
     .badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:600}
     .badge-submitted{background:rgba(34,197,94,.15);color:#4ade80}
@@ -102,6 +103,16 @@
     .signout-btn{background:transparent;border:1px solid #2a2d3a;color:#666;padding:.35rem .8rem;border-radius:6px;font-size:.78rem;cursor:pointer;transition:all .15s}
     .signout-btn:hover{color:#fff;border-color:#555}
   </style>
+  <script>
+    (function () {
+      const user = JSON.parse(localStorage.getItem('tf_user') || 'null');
+      if (!user || user.role !== 'student') {
+        window.location.replace('login.html');
+        return;
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -277,11 +288,11 @@
 
 <script>
   const user = JSON.parse(localStorage.getItem('tf_user')||'null');
-  if (!user || user.role !== 'student') window.location.href = 'login.html';
+  if (!user || user.role !== 'student') window.location.replace('login.html');
 
   const STUDENT_NAME = user?.name || '';
 
-  function signOut(){ localStorage.removeItem('tf_user'); window.location.href='login.html'; }
+  function signOut(){ localStorage.removeItem('tf_user'); window.location.replace('login.html'); }
 
   document.getElementById('sidebar-name').textContent = STUDENT_NAME;
   document.getElementById('sidebar-avatar').textContent = STUDENT_NAME.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();

@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/pages.css" />
   <style>
+    html{visibility:hidden}
     .role-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(79,110,247,.15);color:#7a9af8;border:1px solid rgba(79,110,247,.25);border-radius:20px;font-size:.72rem;font-weight:600;padding:.2rem .7rem;letter-spacing:.04em;text-transform:uppercase}
     .submission-row{cursor:pointer;transition:background .1s}
     .submission-row:hover td{background:rgba(255,255,255,.02)}
@@ -55,6 +56,16 @@
     .signout-btn{background:transparent;border:1px solid #2a2d3a;color:#666;padding:.35rem .8rem;border-radius:6px;font-size:.78rem;cursor:pointer;transition:all .15s}
     .signout-btn:hover{color:#fff;border-color:#555}
   </style>
+  <script>
+    (function () {
+      const user = JSON.parse(localStorage.getItem('tf_user') || 'null');
+      if (!user || (user.role !== 'teacher' && user.role !== 'educator')) {
+        window.location.replace('login.html');
+        return;
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -183,12 +194,19 @@
                 <div><button class="btn btn-primary" onclick="saveTeacherSettings()">Save Changes</button></div>
               </div>
             </div>
-            <div id="tp-data" style="display:none;background:#13151e;border:1px solid #2a2d3a;border-radius:12px;overflow:hidden;">
-              <div style="padding:.9rem 1.1rem;border-bottom:1px solid #2a2d3a;font-size:.9rem;font-weight:700;color:#fff;">Data Management</div>
-              <div style="padding:1rem 1.1rem;">
-                <div style="font-size:.85rem;color:#888;margin-bottom:.5rem;" id="t-task-count">—</div>
-                <div style="font-size:.85rem;color:#888;margin-bottom:1rem;" id="t-student-count">—</div>
-                <button class="btn btn-ghost" onclick="clearTeacherTasks()">Delete My Assigned Tasks</button>
+            <div class="settings-panel" id="tp-data" style="display:none;">
+              <div class="settings-card">
+                <div class="settings-card-header"><div class="settings-card-title">Data Management</div></div>
+                <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Assigned tasks</div><div class="settings-row-sub" id="t-task-count">—</div></div></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Registered students</div><div class="settings-row-sub" id="t-student-count">—</div></div></div>
+                </div>
+              </div>
+              <div class="settings-card danger-zone">
+                <div class="settings-card-header"><div class="settings-card-title" style="color:#f87171;">⚠️ Danger Zone</div></div>
+                <div class="settings-card-body">
+                  <div class="settings-row"><div><div class="settings-row-label">Delete my assigned tasks</div><div class="settings-row-sub">Permanently removes all tasks you assigned and their submissions.</div></div><button class="btn btn-danger" onclick="clearTeacherTasks()">Delete All</button></div>
+                </div>
               </div>
             </div>
           </div>
@@ -245,9 +263,9 @@
   
   
   const user = JSON.parse(localStorage.getItem('tf_user')||'null');
-  if (!user || (user.role !== 'teacher' && user.role !== 'educator')) window.location.href = 'login.html';
+  if (!user || (user.role !== 'teacher' && user.role !== 'educator')) window.location.replace('login.html');
 
-  function signOut(){ localStorage.removeItem('tf_user'); window.location.href='login.html'; }
+  function signOut(){ localStorage.removeItem('tf_user'); window.location.replace('login.html'); }
 
   document.getElementById('sidebar-name').textContent = user.name;
   document.getElementById('sidebar-avatar').textContent = user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();

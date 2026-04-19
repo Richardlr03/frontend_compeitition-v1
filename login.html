@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TaskFlow – Sign In</title>
   <style>
+    html{visibility:hidden}
     *{box-sizing:border-box;margin:0;padding:0}
     body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1117;font-family:'Segoe UI',system-ui,sans-serif;padding:1rem}
     .wrap{width:100%;max-width:440px}
@@ -41,6 +42,16 @@
     .demo-hint{background:rgba(79,110,247,.08);border:1px solid rgba(79,110,247,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1.5rem;font-size:.8rem;color:#7a9af8;line-height:1.6}
     .demo-hint strong{color:#a0b8ff}
   </style>
+  <script>
+    (function () {
+      const user = JSON.parse(localStorage.getItem('tf_user') || 'null');
+      if (user) {
+        window.location.replace((user.role === 'teacher' || user.role === 'educator') ? 'teacher-dashboard.html' : 'student-dashboard.html');
+        return;
+      }
+      document.documentElement.style.visibility = 'visible';
+    })();
+  </script>
 </head>
 <body>
 <div class="wrap">
@@ -143,7 +154,7 @@
 
     // This causes teacher-dashboard.html auth guard (which checks role !== "teacher") to always redirect back to login
     localStorage.setItem('tf_user', JSON.stringify({ role: acc.role, name: acc.name, email: acc.email }));
-    window.location.href = acc.role==='teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html';
+    window.location.replace(acc.role==='teacher' ? 'teacher-dashboard.html' : 'student-dashboard.html');
   }
 
   function doSignUp() {
@@ -168,8 +179,6 @@
 
   document.addEventListener('keydown', e => { if(e.key==='Enter') handleSubmit(); });
 
-  const u = JSON.parse(localStorage.getItem('tf_user')||'null');
-  if (u) window.location.href = (u.role==='teacher' || u.role==='educator') ? 'teacher-dashboard.html' : 'student-dashboard.html';
 </script>
 </body>
 </html>
