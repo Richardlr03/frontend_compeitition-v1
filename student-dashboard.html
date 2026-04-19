@@ -208,11 +208,13 @@
               <div class="settings-card">
                 <div class="settings-card-header"><div class="settings-card-title">Profile Information</div></div>
                 <div class="settings-card-body">
-                  <div class="form-group" style="margin:0;"><label class="form-label">Display Name</label><input type="text" class="form-control" id="s-name" readonly /></div>
+                       but here it's an editable input just like the teacher's profile.
+                       If student changes their name, all assigned tasks disappear because
+                       tasks are stored using the original name as the key. -->
+                  <div class="form-group" style="margin:0;"><label class="form-label">Display Name</label><input type="text" class="form-control" id="s-name" /></div>
                   <div class="form-group" style="margin:0;"><label class="form-label">Email</label><input type="email" class="form-control" id="s-email" /></div>
-                  <div class="form-group" style="margin:0;"><label class="form-label">Role</label><input type="text" class="form-control" id="s-role" readonly /></div>
+                       so students can set a mistyped password with no warning -->
                   <div class="form-group" style="margin:0;"><label class="form-label">New Password</label><input type="password" class="form-control" id="s-pass" placeholder="Leave blank to keep current" /></div>
-                  <div style="font-size:.78rem;color:#666;margin-top:-.25rem;">Display name is locked so existing task assignments continue to match correctly.</div>
                   <div><button class="btn btn-primary-green" onclick="saveSettings()">Save Changes</button></div>
                 </div>
               </div>
@@ -222,8 +224,7 @@
                 <div class="settings-card-header"><div class="settings-card-title">Notification Preferences</div></div>
                 <div class="settings-card-body">
                   <div class="settings-row"><div><div class="settings-row-label">Task Due Reminders</div><div class="settings-row-sub">Get notified when a task is due soon</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Overdue Alerts</div><div class="settings-row-sub">Alert when tasks pass their due date</div></div><label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label></div>
-                  <div class="settings-row"><div><div class="settings-row-label">Weekly Summary</div><div class="settings-row-sub">Receive a weekly digest of your progress</div></div><label class="toggle"><input type="checkbox" id="s-weekly-summary" /><span class="toggle-slider"></span></label></div>
+                  <div class="settings-row"><div><div class="settings-row-label">Overdue Alerts</div><div class="settings-row-sub">Alert when tasks pass their due date</div></div><label class="toggle"><input type="checkbox" checked /></label></div>
                 </div>
               </div>
             </div>
@@ -313,7 +314,6 @@
   function saveAccounts(a)  { localStorage.setItem('tf_accounts',JSON.stringify(a)); }
   function getAssignments() { return JSON.parse(localStorage.getItem('tf_assignments')||'[]'); }
 
-  // BUG X3 (cross-file): key typo 'tf_submisions' (one s) — teacher-dashboard reads 'tf_submissions' (two s)
   // Student submits successfully but teacher never sees it — completely silent failure
   function getSubmissions() {
     return JSON.parse(localStorage.getItem('tf_submissions')||localStorage.getItem('tf_submisions')||'[]');
@@ -349,9 +349,7 @@
     if(tab==='settings') initSettings();
   }
 
-  // BUG X2 (cross-file): student name from login.html was saved as lowercase
   // so STUDENT_NAME = "alex johnson" but assignments store student:"Alex Johnson"
-  // → this filter returns 0 results — student sees no assigned tasks
   function getMyAssignments(){
     return getAssignments().filter(a=>(a.student||'').toLowerCase()===STUDENT_NAME.toLowerCase());
   }
@@ -364,8 +362,7 @@
       const sub=submissions.find(s=>s.taskId==a.id&&s.studentName===STUDENT_NAME);
       const today=new Date().toISOString().split('T')[0];
 
-      // BUG L1 (subtle): uses <= so today shows as overdue — teacher uses < so they disagree
-      const overdue=a.dueDate&&a.dueDate<today&&!sub;
+      const overdue=a.dueDate&&a.dueDate<=today&&!sub;
 
       const bc=sub?'badge-submitted':overdue?'badge-overdue':'badge-pending';
       const bt=sub?'Submitted':overdue?'Overdue':'Pending';
@@ -406,8 +403,6 @@
 
   let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
   function changeMonth(d){
-    // BUG C2: changeMonth is not implemented — navigation buttons do nothing
-    // TODO: update calYear/calMonth and call renderCalendar()
   }
   function goToday(){ calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); renderCalendar(); }
 
@@ -419,8 +414,7 @@
     const byDate={};
     function addEv(ds,ev){ if(!ds)return; if(!byDate[ds])byDate[ds]=[]; byDate[ds].push(ev); }
 
-    // BUG C3: reads a.assignedTo instead of a.student — teacher tasks never appear on calendar
-    const assignments=getMyAssignments();
+    const assignments=getAssignments().filter(a=>a.assignedTo===STUDENT_NAME);
     const submissions=getSubmissions();
     assignments.forEach(a=>{ if(!a.dueDate)return; const sub=submissions.find(s=>s.taskId==a.id&&s.studentName===STUDENT_NAME); addEv(a.dueDate,{ label:a.title, cls:sub?'type-teacher-submitted':'type-teacher-'+(a.priority||'medium'), type:'📋 Teacher task', due:a.dueDate, priority:a.priority, status:sub?'Submitted ✓':'Pending', note:a.desc }); });
     schedule.forEach(e=>{ const ds=e.time?e.time.split('T')[0]:null; if(!ds)return; const timeStr=e.time?new Date(e.time).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}):''; addEv(ds,{ label:(timeStr?timeStr+' ':'')+e.title, cls:'type-personal', type:'📅 Personal event', due:ds, status:'', note:e.notes }); });
@@ -430,7 +424,6 @@
     let html=DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
     function ds(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
 
-    // BUG C4: isToday check is missing — today's date is never highlighted
     function cell(dayNum,dateS,other){
       let cls='cal-cell'+(other?' other-month':''); // missing: +(isToday?' today':'')
       const evs=(byDate[dateS]||[]);
@@ -448,7 +441,6 @@
   function closePopup(){ document.getElementById('cal-popup').classList.remove('open'); }
   document.addEventListener('click',()=>closePopup());
 
-  // BUG C5: function name typo — 'saveScheduleEven' missing the 't' — Add button calls this and throws ReferenceError
   function saveScheduleEven(){
     const title=document.getElementById('sc-title').value.trim(), time=document.getElementById('sc-time').value, err=document.getElementById('sc-error');
     if(!title||!time){ err.textContent='Title and date/time are required.'; err.style.display='block'; return; }
@@ -472,57 +464,11 @@
 
   function renderStats(){ const a=getMyAssignments(), s=getSubmissions().filter(s=>s.studentName===STUDENT_NAME); document.getElementById('stat-total').textContent=a.length; document.getElementById('stat-submitted').textContent=s.length; document.getElementById('stat-outstanding').textContent=Math.max(0,a.length-s.length); document.getElementById('stat-own').textContent=getOwnTasks().length; document.getElementById('sidebar-task-count').textContent=Math.max(0,a.length-s.length); }
 
-  calYear = new Date().getFullYear();
-  calMonth = new Date().getMonth();
-
-  function changeMonth(d){
-    calMonth += d;
-    if (calMonth < 0) {
-      calMonth = 11;
-      calYear -= 1;
-    } else if (calMonth > 11) {
-      calMonth = 0;
-      calYear += 1;
-    }
-    renderCalendar();
-  }
-
-  function renderCalendar(){
-    const schedule=getSchedule(), ownTasks=getOwnTasks();
-    document.getElementById('cal-month-label').textContent=new Date(calYear,calMonth,1).toLocaleString('en-AU',{month:'long',year:'numeric'});
-    const firstDay=new Date(calYear,calMonth,1).getDay(), daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-    const today=new Date(); today.setHours(0,0,0,0);
-    const byDate={};
-    function addEv(ds,ev){ if(!ds)return; if(!byDate[ds])byDate[ds]=[]; byDate[ds].push(ev); }
-
-    const assignments=getMyAssignments();
-    const submissions=getSubmissions();
-    assignments.forEach(a=>{ if(!a.dueDate)return; const sub=submissions.find(s=>s.taskId==a.id&&s.studentName===STUDENT_NAME); addEv(a.dueDate,{ label:a.title, cls:sub?'type-teacher-submitted':'type-teacher-'+(a.priority||'medium'), type:'Teacher task', due:a.dueDate, priority:a.priority, status:sub?'Submitted':'Pending', note:a.desc }); });
-    schedule.forEach(e=>{ const ds=e.time?e.time.split('T')[0]:null; if(!ds)return; const timeStr=e.time?new Date(e.time).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'}):''; addEv(ds,{ label:(timeStr?timeStr+' ':'')+e.title, cls:'type-personal', type:'Personal event', due:ds, status:'', note:e.notes }); });
-    ownTasks.filter(t=>t.dueDate).forEach(t=>{ addEv(t.dueDate,{ label:t.title, cls:'type-own', type:'My task', due:t.dueDate, priority:t.priority, status:t.done?'Done':'Pending', note:t.desc }); });
-
-    const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    let html=DAYS.map(d=>`<div class="cal-dow">${d}</div>`).join('');
-    function ds(dt){ return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0'); }
-    function cell(dayNum,dateS,other){
-      const isToday = dateS === ds(today);
-      const cls='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
-      const evs=(byDate[dateS]||[]);
-      const evHtml=evs.slice(0,3).map(ev=>`<div class="cal-event ${ev.cls}" onclick="showPopup(event,'${encodeURIComponent(JSON.stringify(ev))}')" title="${ev.label}">${ev.label}</div>`).join('')+(evs.length>3?`<div style="font-size:.65rem;color:#555;padding:.1rem .2rem;">+${evs.length-3} more</div>`:'');
-      return `<div class="${cls}"><div class="cal-day-num">${dayNum}</div>${evHtml}</div>`;
-    }
-    for(let i=0;i<firstDay;i++){ const d=new Date(calYear,calMonth,-firstDay+i+1); html+=cell(d.getDate(),ds(d),true); }
-    for(let d=1;d<=daysInMonth;d++){ const dt=new Date(calYear,calMonth,d); html+=cell(d,ds(dt),false); }
-    const trailing=(firstDay+daysInMonth)%7===0?0:7-(firstDay+daysInMonth)%7;
-    for(let i=1;i<=trailing;i++){ const dt=new Date(calYear,calMonth+1,i); html+=cell(i,ds(dt),true); }
-    document.getElementById('cal-grid').innerHTML=html;
-  }
-
+  // hides panels in other tabs — switching settings tabs breaks other tab panels
   function showSettingsTab(t){
     document.querySelectorAll('#panel-settings .settings-panel').forEach(el=>el.style.display='none');
     const target=document.getElementById('sp-'+t);
     if(target) target.style.display='block';
-    document.querySelectorAll('#panel-settings .settings-nav-item').forEach(el=>el.classList.toggle('active', el.getAttribute('onclick')===`showSettingsTab('${t}')`));
     if(t==='data'){
       const assignedCount=getMyAssignments().length;
       const ownCount=getOwnTasks().length;
@@ -532,26 +478,32 @@
   }
 
   function initSettings(){
-    const me=getAccounts().find(acc=>acc.email===user.email) || JSON.parse(localStorage.getItem('tf_user')||'{}');
+    const me=JSON.parse(localStorage.getItem('tf_user')||'{}');
     document.getElementById('s-name').value=me.name||'';
     document.getElementById('s-email').value=me.email||'';
     document.getElementById('s-role').value='Student';
     document.getElementById('s-pass').value='';
+    document.getElementById('s-task-count').textContent=getAssignments().length+' tasks assigned';
+    document.getElementById('s-own-count').textContent=getOwnTasks().length+' personal tasks';
     showSettingsTab('profile');
   }
 
   function saveProfile(){
-    const email=document.getElementById('s-email').value.trim().toLowerCase();
-    const pass=document.getElementById('s-pass').value;
+    const name  = document.getElementById('s-name').value.trim();
+    const email = document.getElementById('s-email').value.trim().toLowerCase();
+    const pass  = document.getElementById('s-pass').value;
     if(!email){ showToast('Email cannot be empty.'); return; }
-    if(pass && pass.length < 6){ showToast('Password must be at least 6 characters.'); return; }
     const accounts=getAccounts(), idx=accounts.findIndex(a=>a.email===user.email);
     if(idx===-1){ showToast('Account not found.'); return; }
+    // all tasks assigned to "Alex Johnson" become invisible since filter uses a.student === STUDENT_NAME
+    accounts[idx].name=name;
     accounts[idx].email=email;
     if(pass) accounts[idx].password=pass;
     saveAccounts(accounts);
-    user.email=email;
+    user.name=name; user.email=email;
     localStorage.setItem('tf_user',JSON.stringify(user));
+    document.getElementById('sidebar-name').textContent=name;
+    document.getElementById('sidebar-avatar').textContent=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     showToast('Profile saved!');
   }
 
@@ -562,7 +514,6 @@
     saveOwnTasks([]);
     renderOwnTasks();
     renderStats();
-    showSettingsTab('data');
     showToast('Personal tasks cleared.');
   }
 
